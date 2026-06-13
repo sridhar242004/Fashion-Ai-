@@ -1,477 +1,3714 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FashionAI - Your Intelligent Wardrobe Assistant</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
-    <style>
-        [v-cloak] { display: none; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>MAISON ARIA — Digital Atelier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        obsidian: '#0f0f12',
+        ink: '#1a1a1e',
+        ivory: '#f2ede6',
+        gold: '#b07d4b',
+        oxblood: '#5a2a2a',
+        stone: '#7a756e',
+        copper: '#8b5a3a'
+      },
+      fontFamily: {
+        display: ['Cormorant Garamond', 'serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+        sans: ['Inter', 'sans-serif']
+      }
+    }
+  }
+}
+</script>
+<style>
+:root {
+  --obsidian: #0f0f12;
+  --ivory: #f2ede6;
+  --gold: #b07d4b;
+  --oxblood: #5a2a2a;
+  --stone: #7a756e;
+  --copper: #8b5a3a;
+  --nav-height: 64px;
+  --bottom-nav-height: 72px;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: auto; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--obsidian);
+  color: var(--ivory);
+  overflow-x: hidden;
+  cursor: none;
+  padding-bottom: calc(var(--bottom-nav-height) + var(--safe-bottom));
+}
+::selection { background: var(--gold); color: var(--obsidian); }
+::-webkit-scrollbar { width: 0px; height: 0px; }
 
-        .dark-mode {
-            background-color: #1a202c;
-            color: #ffffff;
-        }
+/* ====== CUSTOM CURSOR (Desktop Only) ====== */
+.cursor-dot {
+  position: fixed; top: 0; left: 0; z-index: 99999;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold); pointer-events: none;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: difference;
+}
+.cursor-ring {
+  position: fixed; top: 0; left: 0; z-index: 99998;
+  width: 20px; height: 20px;
+  border: 1px solid rgba(176, 125, 75, 0.4);
+  border-radius: 50%; pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s, background 0.3s;
+}
+.cursor-ring.hover {
+  width: 60px; height: 60px;
+  border-color: rgba(176, 125, 75, 0.2);
+  background: rgba(176, 125, 75, 0.05);
+}
 
-        .dark-mode .bg-white {
-            background-color: #2d3748;
-        }
+/* ====== SCROLL PROGRESS ====== */
+.scroll-progress {
+  position: fixed; top: 0; left: 0; z-index: 10001;
+  height: 2px; background: var(--gold);
+  width: 0%; transition: width 0.1s linear;
+  box-shadow: 0 0 10px var(--gold);
+}
 
-        .dark-mode .text-gray-800 {
-            color: #e2e8f0;
-        }
+/* ====== PRELOADER ====== */
+#preloader {
+  position: fixed; inset: 0; z-index: 10000;
+  background: var(--obsidian);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity 1s cubic-bezier(0.65, 0, 0.35, 1), visibility 1s;
+}
+#preloader.done { opacity: 0; visibility: hidden; pointer-events: none; }
+.preloader-counter {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2.5rem; font-weight: 300; color: var(--gold);
+  letter-spacing: -0.05em; margin-bottom: 0.75rem;
+}
+.preloader-bar {
+  width: 160px; height: 1px; background: rgba(176, 125, 75, 0.15);
+  position: relative; overflow: hidden;
+}
+.preloader-bar-fill {
+  position: absolute; inset: 0; background: var(--gold);
+  width: 0%; transition: width 0.3s ease;
+  box-shadow: 0 0 10px var(--gold);
+}
+.preloader-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem; letter-spacing: 0.4em;
+  text-transform: uppercase; color: var(--stone);
+  margin-top: 1rem;
+}
 
-        .dark-mode .text-gray-600 {
-            color: #a0aec0;
-        }
+/* ====== FILM GRAIN ====== */
+.grain {
+  position: fixed; inset: 0; z-index: 9998;
+  pointer-events: none; opacity: 0.03;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
 
-        .dark-mode .bg-purple-100 {
-            background-color: #44337a;
-        }
+/* ====== TOP NAVBAR (Desktop) ====== */
+#top-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  padding: 1rem 1.5rem;
+  display: flex; justify-content: space-between; align-items: center;
+  mix-blend-mode: difference;
+  transition: all 0.5s;
+}
+#top-nav.scrolled {
+  background: rgba(15, 15, 18, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  mix-blend-mode: normal;
+  border-bottom: 1px solid rgba(242, 237, 230, 0.05);
+}
+#top-nav a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--ivory);
+  text-decoration: none; transition: opacity 0.3s;
+  position: relative;
+}
+#top-nav a::after {
+  content: ''; position: absolute; bottom: -4px; left: 0;
+  width: 0; height: 1px; background: var(--gold);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#top-nav a:hover::after { width: 100%; }
+#top-nav .nav-brand {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem; font-weight: 300;
+}
+.desktop-nav { display: none; }
 
-        .dark-mode .bg-pink-100 {
-            background-color: #702459;
-        }
+/* ====== BOTTOM FLOATING NAVBAR (Mobile) ====== */
+#bottom-nav {
+  position: fixed;
+  bottom: calc(12px + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  z-index: 9999;
+  display: flex;
+  gap: 0;
+  background: rgba(18, 18, 22, 0.85);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(242, 237, 230, 0.08);
+  border-radius: 24px;
+  padding: 6px 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(176, 125, 75, 0.05);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s;
+}
+#bottom-nav.hidden {
+  transform: translateX(-50%) translateY(120px);
+  opacity: 0;
+}
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 14px;
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: 18px;
+  color: var(--stone);
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.bottom-nav-item svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  fill: none;
+  transition: all 0.3s;
+}
+.bottom-nav-item.active {
+  color: var(--gold);
+  background: rgba(176, 125, 75, 0.08);
+}
+.bottom-nav-item.active svg {
+  stroke: var(--gold);
+  filter: drop-shadow(0 0 6px rgba(176, 125, 75, 0.4));
+}
+.bottom-nav-item::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gold);
+  opacity: 0;
+  transition: opacity 0.3s;
+  box-shadow: 0 0 6px var(--gold);
+}
+.bottom-nav-item.active::before {
+  opacity: 1;
+}
 
-        .dark-mode .bg-blue-100 {
-            background-color: #2c5282;
-        }
+/* ====== TYPOGRAPHY ====== */
+.display-massive {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  color: var(--ivory);
+}
+.display-massive em { font-style: italic; color: var(--gold); }
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--stone);
+}
 
-        .dark-mode .bg-gray-100 {
-            background-color: #2d3748;
-        }
-    </style>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            // ... any other Tailwind configurations
-        }
-    </script>
+/* ====== BUTTONS ====== */
+.btn-gold {
+  background: transparent; color: var(--gold);
+  border: 1px solid var(--gold);
+  padding: 0.875rem 2rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  min-height: 48px;
+  border-radius: 2px;
+  width: 100%;
+}
+.btn-gold::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--gold); transform: translateX(-101%);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: -1;
+}
+.btn-gold:hover::before { transform: translateX(0); }
+.btn-gold:hover { color: var(--obsidian); }
+.btn-ghost {
+  background: transparent; color: var(--ivory);
+  border: 1px solid rgba(242, 237, 230, 0.2);
+  padding: 0.875rem 2rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  min-height: 48px;
+  border-radius: 2px;
+  width: 100%;
+}
+.btn-ghost::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--ivory); transform: translateY(101%);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: -1;
+}
+.btn-ghost:hover::before { transform: translateY(0); }
+.btn-ghost:hover { border-color: var(--ivory); color: var(--obsidian); }
+
+/* ====== REVEAL ANIMATIONS ====== */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* ====== SECTION BASE ====== */
+.section {
+  position: relative;
+  width: 100%;
+  background: var(--obsidian);
+}
+
+/* ====== HERO ====== */
+#hero {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 0 6vw;
+  padding-top: calc(var(--nav-height) + var(--safe-top));
+}
+#hero-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.hero-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  max-width: 100%;
+  width: 100%;
+}
+.hero-eyebrow {
+  margin-bottom: 1.25rem;
+  opacity: 0;
+}
+.hero-title {
+  font-size: clamp(2.8rem, 14vw, 9rem);
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+}
+.hero-title-line {
+  display: block;
+  overflow: hidden;
+}
+.hero-title-line span {
+  display: inline-block;
+}
+.hero-sub {
+  max-width: 100%;
+  margin: 0 auto 2rem;
+  line-height: 1.7;
+  color: var(--stone);
+  font-weight: 300;
+  font-size: 0.9rem;
+  opacity: 0;
+  padding: 0 0.5rem;
+}
+.hero-cta {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-direction: column;
+  opacity: 0;
+  padding: 0 1rem;
+  max-width: 320px;
+  margin: 0 auto;
+}
+.hero-swipe-hint {
+  position: absolute;
+  bottom: calc(24px + var(--bottom-nav-height) + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 10;
+  opacity: 0.6;
+}
+.hero-swipe-hint .swipe-line {
+  width: 1px;
+  height: 30px;
+  background: linear-gradient(to bottom, var(--gold), transparent);
+  animation: swipePulse 2s ease-in-out infinite;
+}
+.hero-swipe-hint .swipe-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--stone);
+}
+@keyframes swipePulse {
+  0%, 100% { opacity: 0.3; transform: scaleY(0.7); }
+  50% { opacity: 1; transform: scaleY(1); }
+}
+
+/* ====== PHILOSOPHY - CINEMATIC MOBILE ====== */
+#philosophy {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.philosophy-cinematic {
+  position: relative;
+  width: 100%;
+  height: 55vh;
+  min-height: 350px;
+  overflow: hidden;
+}
+.philosophy-cinematic video,
+.philosophy-cinematic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(30%) contrast(1.15) brightness(0.7);
+}
+.philosophy-cinematic::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, var(--obsidian) 100%);
+  pointer-events: none;
+}
+.philosophy-content {
+  padding: 2rem 6vw 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  margin-top: -60px;
+}
+.philosophy-title {
+  font-size: clamp(2rem, 9vw, 4.5rem);
+  margin-bottom: 1.25rem;
+}
+.philosophy-text {
+  color: var(--stone);
+  line-height: 1.8;
+  font-weight: 300;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  opacity: 0;
+  transform: translateY(20px);
+}
+.philosophy-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(242, 237, 230, 0.1);
+}
+.philosophy-stat-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.2rem;
+  color: var(--gold);
+  line-height: 1;
+  opacity: 0;
+  transform: translateY(10px);
+}
+.philosophy-stat-label {
+  opacity: 0;
+  transform: translateY(10px);
+  font-size: 0.55rem;
+  margin-top: 0.5rem;
+}
+
+/* ====== LOOM - HORIZONTAL SWIPE CAROUSEL ====== */
+#loom {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 6vh 0;
+}
+#loom-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.loom-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  padding: 0 6vw;
+}
+.loom-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.loom-title {
+  font-size: clamp(2rem, 9vw, 5rem);
+  margin-bottom: 0.5rem;
+}
+.loom-carousel {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding: 1rem 6vw;
+  margin: 0 -6vw;
+  scrollbar-width: none;
+}
+.loom-carousel::-webkit-scrollbar { display: none; }
+.loom-item {
+  flex: 0 0 80%;
+  max-width: 300px;
+  scroll-snap-align: center;
+  text-align: center;
+  padding: 1.5rem;
+  border: 1px solid rgba(242, 237, 230, 0.08);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(15, 15, 18, 0.6);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+}
+.loom-item::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(176, 125, 75, 0.03) 100%);
+  opacity: 0; transition: opacity 0.5s;
+}
+.loom-item:hover::before, .loom-item:active::before { opacity: 1; }
+.loom-item-icon {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  color: var(--gold);
+  border-radius: 2px;
+}
+.loom-item-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.15rem;
+  margin-bottom: 0.5rem;
+}
+.loom-item-desc {
+  font-size: 0.75rem;
+  color: var(--stone);
+  line-height: 1.6;
+}
+.loom-carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+.loom-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(242, 237, 230, 0.15);
+  transition: all 0.3s;
+}
+.loom-dot.active {
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold);
+  width: 20px;
+  border-radius: 3px;
+}
+
+/* ====== STYLIST ====== */
+#stylist {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.stylist-left {
+  width: 100%;
+  padding: 6vh 6vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-bottom: 1px solid rgba(242, 237, 230, 0.08);
+}
+.stylist-right {
+  width: 100%;
+  padding: 6vh 6vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: rgba(18, 18, 22, 0.8);
+  position: relative;
+  min-height: 60vh;
+}
+.stylist-right::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(176, 125, 75, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+}
+.stylist-title {
+  font-size: clamp(2rem, 9vw, 4rem);
+  margin-bottom: 1.5rem;
+}
+.stylist-feature {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.stylist-feature-line {
+  width: 2px;
+  background: var(--gold);
+  flex-shrink: 0;
+}
+.stylist-feature-title {
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+}
+.stylist-feature-desc {
+  color: var(--stone);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+/* Terminal */
+.terminal-header {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(242, 237, 230, 0.1);
+}
+.terminal-blink {
+  width: 8px; height: 8px;
+  background: var(--gold);
+  border-radius: 50%;
+  animation: blink 2s infinite;
+  box-shadow: 0 0 8px var(--gold);
+  flex-shrink: 0;
+}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+.terminal-chat {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  line-height: 1.8;
+  max-height: 280px;
+  overflow-y: auto;
+  margin-bottom: 1.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) transparent;
+}
+.terminal-chat::-webkit-scrollbar { width: 2px; }
+.terminal-chat::-webkit-scrollbar-thumb { background: var(--gold); }
+.terminal-msg {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-left: 2px solid var(--gold);
+  background: rgba(176, 125, 75, 0.03);
+  animation: msgSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 0 4px 4px 0;
+}
+@keyframes msgSlide {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.terminal-msg-user {
+  margin-bottom: 1rem;
+  text-align: right;
+  color: var(--stone);
+  animation: msgSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.terminal-input-line {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(242, 237, 230, 0.1);
+}
+.terminal-prompt {
+  color: var(--gold);
+  font-size: 1rem;
+  animation: promptPulse 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes promptPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.terminal-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ivory);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  width: 100%;
+  caret-color: var(--gold);
+  min-height: 44px;
+}
+.terminal-input::placeholder { color: var(--stone); }
+.quick-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.quick-prompt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--stone);
+  border: 1px solid rgba(242, 237, 230, 0.1);
+  padding: 0.6rem 1rem;
+  background: transparent;
+  cursor: none;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 2px;
+}
+.quick-prompt::before {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(176, 125, 75, 0.1);
+  transform: translateX(-101%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: -1;
+}
+.quick-prompt:hover::before, .quick-prompt:active::before { transform: translateX(0); }
+.quick-prompt:hover, .quick-prompt:active {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* ====== FORGE ====== */
+#forge {
+  min-height: 100dvh;
+  padding: 6vh 6vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background: var(--obsidian);
+}
+.forge-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.forge-particle-field {
+  position: absolute;
+  inset: 0;
+}
+.forge-particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(176, 125, 75, 0.4);
+  border-radius: 50%;
+  animation: forgeFloat 15s infinite ease-in-out;
+}
+@keyframes forgeFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translate(var(--tx), var(--ty)) scale(1.5); }
+  90% { opacity: 1; }
+  100% { transform: translate(var(--tx), calc(var(--ty) - 100px)) scale(0); opacity: 0; }
+}
+.forge-glow-orb {
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(176, 125, 75, 0.03) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: orbPulse 8s ease-in-out infinite;
+}
+@keyframes orbPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+}
+.forge-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.forge-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.forge-eyebrow {
+  margin-bottom: 1rem;
+  display: inline-block;
+  position: relative;
+}
+.forge-eyebrow::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 1px;
+  background: var(--gold);
+  opacity: 0.5;
+}
+.forge-title {
+  font-size: clamp(2rem, 9vw, 5rem);
+  margin-bottom: 0.5rem;
+}
+.forge-title-line {
+  display: block;
+  overflow: hidden;
+}
+.forge-title-line em {
+  font-style: italic;
+  color: var(--gold);
+}
+.forge-subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--stone);
+  margin-top: 0.75rem;
+  opacity: 0;
+  transform: translateY(10px);
+}
+.forge-subtitle.active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s;
+}
+.forge-orbit {
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 2rem;
+  position: relative;
+}
+.orbit-track {
+  position: absolute;
+  top: 18px;
+  left: 3%;
+  right: 3%;
+  height: 1px;
+  background: rgba(242, 237, 230, 0.08);
+}
+.orbit-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--gold);
+  width: 0%;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 10px rgba(176, 125, 75, 0.3);
+}
+.orbit-steps {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  z-index: 2;
+}
+.orbit-node {
+  background: none;
+  border: none;
+  cursor: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0;
+  position: relative;
+  transition: all 0.4s;
+  min-width: 44px;
+  min-height: 44px;
+}
+.node-ring {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(242, 237, 230, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.node-ring::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  transition: all 0.5s;
+}
+.orbit-node.active .node-ring {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(176, 125, 75, 0.2), inset 0 0 20px rgba(176, 125, 75, 0.05);
+}
+.orbit-node.active .node-ring::before {
+  border-color: rgba(176, 125, 75, 0.15);
+  animation: nodePulse 2s ease-in-out infinite;
+}
+@keyframes nodePulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.5; }
+}
+.orbit-node.completed .node-ring {
+  border-color: var(--gold);
+  background: rgba(176, 125, 75, 0.1);
+}
+.node-core {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  color: var(--stone);
+  transition: color 0.3s;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.orbit-node.active .node-core,
+.orbit-node.completed .node-core {
+  color: var(--gold);
+}
+.node-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.45rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--stone);
+  transition: all 0.3s;
+  opacity: 0.6;
+  text-align: center;
+  max-width: 50px;
+  line-height: 1.2;
+}
+.orbit-node.active .node-label {
+  color: var(--gold);
+  opacity: 1;
+  transform: translateY(-2px);
+}
+.orbit-node.completed .node-label {
+  opacity: 0.4;
+}
+.forge-stage {
+  width: 100%;
+  max-width: 900px;
+  position: relative;
+  min-height: 280px;
+}
+.forge-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(40px);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.forge-panel.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+  pointer-events: all;
+  position: relative;
+}
+.forge-panel.exit-left {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+.forge-panel-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.25rem, 5vw, 2.5rem);
+  color: var(--ivory);
+  text-align: center;
+  margin-bottom: 1.25rem;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+.forge-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.forge-card {
+  background: rgba(18, 18, 22, 0.6);
+  border: 1px solid rgba(242, 237, 230, 0.08);
+  backdrop-filter: blur(20px);
+  padding: 1.25rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: none;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  min-height: 44px;
+}
+.forge-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(176, 125, 75, 0.03) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.forge-card:hover::before, .forge-card:active::before {
+  opacity: 1;
+}
+.forge-card:hover, .forge-card:active {
+  border-color: rgba(176, 125, 75, 0.3);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.4), 0 0 30px rgba(176, 125, 75, 0.05);
+}
+.forge-card.selected {
+  border-color: var(--gold);
+  background: rgba(176, 125, 75, 0.05);
+  box-shadow: 0 0 40px rgba(176, 125, 75, 0.1), inset 0 0 40px rgba(176, 125, 75, 0.02);
+}
+.forge-card.selected::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold);
+  animation: selectedPulse 2s ease-in-out infinite;
+}
+@keyframes selectedPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+.forge-card-visual {
+  width: 36px;
+  height: 36px;
+  color: var(--stone);
+  transition: all 0.4s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.forge-card:hover .forge-card-visual,
+.forge-card.selected .forge-card-visual {
+  color: var(--gold);
+  transform: scale(1.1);
+}
+.forge-card-visual svg {
+  width: 100%;
+  height: 100%;
+}
+.forge-card-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem;
+  color: var(--ivory);
+  transition: color 0.3s;
+  text-align: center;
+}
+.forge-card:hover .forge-card-label,
+.forge-card.selected .forge-card-label {
+  color: var(--gold);
+}
+.forge-card-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--stone);
+  transition: color 0.3s;
+  text-align: center;
+}
+.forge-card:hover .forge-card-hint {
+  color: rgba(176, 125, 75, 0.6);
+}
+.chromatic-card {
+  padding: 1rem;
+}
+.chromatic-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid rgba(242, 237, 230, 0.1);
+  transition: all 0.4s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.forge-card:hover .chromatic-swatch,
+.forge-card.selected .chromatic-swatch {
+  transform: scale(1.1);
+  border-color: var(--gold);
+  box-shadow: 0 0 30px rgba(176, 125, 75, 0.2);
+}
+
+/* ====== FORGE BOTTOM SHEET RESULT ====== */
+.forge-result {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.forge-result.visible {
+  opacity: 1;
+  visibility: visible;
+}
+.result-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 15, 18, 0.7);
+  backdrop-filter: blur(20px) saturate(120%);
+}
+.result-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: rgba(18, 18, 22, 0.95);
+  border: 1px solid rgba(176, 125, 75, 0.15);
+  border-bottom: none;
+  border-radius: 24px 24px 0 0;
+  padding: 1.5rem;
+  animation: sheetEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes sheetEnter {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.result-sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(242, 237, 230, 0.2);
+  margin: 0 auto 1.5rem;
+}
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(242, 237, 230, 0.08);
+}
+.result-eyebrow {
+  margin: 0;
+}
+.result-close {
+  background: none;
+  border: 1px solid rgba(242, 237, 230, 0.15);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--stone);
+  cursor: none;
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+.result-close:hover, .result-close:active {
+  border-color: var(--gold);
+  color: var(--gold);
+  transform: rotate(90deg);
+}
+.result-lookbook {
+  margin-bottom: 1.25rem;
+}
+.lookbook-card {
+  position: relative;
+  aspect-ratio: 16/10;
+  border: 1px solid rgba(242, 237, 230, 0.1);
+  overflow: hidden;
+  background: linear-gradient(135deg, #0f0f12 0%, #1a1a1e 100%);
+  transition: all 0.6s;
+  border-radius: 8px;
+}
+.lookbook-card:hover, .lookbook-card:active {
+  border-color: rgba(176, 125, 75, 0.3);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.lookbook-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: grayscale(30%) contrast(1.1);
+  transition: all 0.8s;
+}
+.lookbook-card:hover .lookbook-image, .lookbook-card:active .lookbook-image {
+  filter: grayscale(0%) contrast(1.15);
+  transform: scale(1.05);
+}
+.lookbook-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1.25rem;
+  background: linear-gradient(to top, rgba(15,15,18,0.95) 0%, transparent 100%);
+}
+.lookbook-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.35rem;
+  color: var(--ivory);
+  margin-bottom: 0.4rem;
+  font-weight: 300;
+}
+.lookbook-desc {
+  font-size: 0.8rem;
+  color: var(--stone);
+  line-height: 1.6;
+  max-width: 400px;
+}
+.result-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid rgba(242, 237, 230, 0.08);
+  border-bottom: 1px solid rgba(242, 237, 230, 0.08);
+}
+.result-palette {
+  display: flex;
+  gap: 0.75rem;
+}
+.palette-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(242, 237, 230, 0.1);
+  position: relative;
+  cursor: none;
+  transition: all 0.4s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+.palette-swatch:hover, .palette-swatch:active {
+  transform: scale(1.2);
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(176, 125, 75, 0.2);
+}
+.palette-swatch span {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--stone);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.palette-swatch:hover span, .palette-swatch:active span {
+  opacity: 1;
+}
+.result-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.result-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--stone);
+  border: 1px solid rgba(242, 237, 230, 0.1);
+  padding: 0.35rem 0.7rem;
+  transition: all 0.3s;
+  border-radius: 2px;
+}
+.result-tag:hover, .result-tag:active {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.result-btn-primary,
+.result-btn-secondary {
+  flex: 1;
+}
+
+/* ====== BOUTIQUE - MASONRY GRID ====== */
+#boutique {
+  min-height: 100dvh;
+  padding: 6vh 6vw;
+  position: relative;
+}
+.boutique-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+.boutique-title {
+  font-size: clamp(2rem, 9vw, 5rem);
+  margin-bottom: 0.75rem;
+}
+.boutique-filters {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+.boutique-filter {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--stone);
+  border: 1px solid rgba(242, 237, 230, 0.15);
+  padding: 0.6rem 1rem;
+  background: transparent;
+  cursor: none;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  min-height: 44px;
+  border-radius: 2px;
+}
+.boutique-filter::before {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(176, 125, 75, 0.08);
+  transform: translateY(101%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: -1;
+}
+.boutique-filter:hover::before, .boutique-filter.active::before,
+.boutique-filter:active::before {
+  transform: translateY(0);
+}
+.boutique-filter:hover, .boutique-filter.active,
+.boutique-filter:active {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.boutique-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+.boutique-card {
+  border: 1px solid rgba(242, 237, 230, 0.1);
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  background: rgba(15, 15, 18, 0.4);
+  border-radius: 4px;
+}
+.boutique-card:nth-child(3n) {
+  grid-column: span 2;
+}
+.boutique-card::before {
+  content: ''; position: absolute; inset: 0; z-index: 2;
+  background: linear-gradient(to top, rgba(15,15,18,0.8) 0%, transparent 50%);
+  pointer-events: none;
+  opacity: 0; transition: opacity 0.4s;
+}
+.boutique-card:hover::before, .boutique-card:active::before { opacity: 1; }
+.boutique-card:hover, .boutique-card:active {
+  border-color: var(--gold);
+  transform: translateY(-6px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.5), 0 0 30px rgba(176, 125, 75, 0.05);
+}
+.boutique-card-img-wrap {
+  overflow: hidden;
+  position: relative;
+}
+.boutique-card-img {
+  width: 100%;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  filter: grayscale(30%);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.boutique-card:hover .boutique-card-img, .boutique-card:active .boutique-card-img {
+  filter: grayscale(0%);
+  transform: scale(1.1);
+}
+.boutique-card-info {
+  padding: 1rem;
+  position: relative;
+  z-index: 3;
+}
+.boutique-card-brand {
+  font-size: 0.6rem;
+  color: var(--stone);
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.boutique-card-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+  transition: color 0.3s;
+}
+.boutique-card:hover .boutique-card-name, .boutique-card:active .boutique-card-name {
+  color: var(--gold);
+}
+.boutique-card-price {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--gold);
+}
+.boutique-card-btn {
+  position: absolute; bottom: 1rem; right: 1rem;
+  width: 36px; height: 36px;
+  border: 1px solid rgba(242, 237, 230, 0.2);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ivory);
+  opacity: 0; transform: translateY(10px);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 4; cursor: none; background: none;
+}
+.boutique-card:hover .boutique-card-btn, .boutique-card:active .boutique-card-btn {
+  opacity: 1; transform: translateY(0);
+}
+.boutique-card-btn:hover, .boutique-card-btn:active {
+  background: var(--gold); border-color: var(--gold); color: var(--obsidian);
+}
+
+/* ====== TRENDS - ACCORDION ====== */
+#trends {
+  min-height: 100dvh;
+  padding: 6vh 6vw;
+  position: relative;
+}
+.trends-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
+}
+.trends-title {
+  font-size: clamp(2rem, 9vw, 5rem);
+}
+.trend-item {
+  border-bottom: 1px solid rgba(242, 237, 230, 0.08);
+  padding: 1.5rem 0;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+.trend-item-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+}
+.trend-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.75rem;
+  color: var(--stone);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  line-height: 1;
+  flex-shrink: 0;
+  width: 40px;
+}
+.trend-item.expanded .trend-num {
+  color: var(--gold);
+  transform: scale(1.1);
+  text-shadow: 0 0 20px rgba(176, 125, 75, 0.3);
+}
+.trend-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.35rem;
+  transition: color 0.3s;
+  flex: 1;
+}
+.trend-item.expanded .trend-name { color: var(--gold); }
+.trend-chevron {
+  width: 20px;
+  height: 20px;
+  color: var(--stone);
+  transition: all 0.4s;
+  flex-shrink: 0;
+}
+.trend-item.expanded .trend-chevron {
+  transform: rotate(180deg);
+  color: var(--gold);
+}
+.trend-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+}
+.trend-item.expanded .trend-content {
+  max-height: 300px;
+  opacity: 1;
+  margin-top: 1rem;
+  padding-left: 56px;
+}
+.trend-desc {
+  color: var(--stone);
+  font-size: 0.85rem;
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+}
+.trend-heat {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--gold);
+  transition: all 0.4s;
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid rgba(176, 125, 75, 0.2);
+  border-radius: 2px;
+}
+.trend-item.expanded .trend-heat {
+  background: rgba(176, 125, 75, 0.08);
+  box-shadow: 0 0 10px rgba(176, 125, 75, 0.1);
+}
+.trend-img-preview {
+  width: 100%;
+  height: 180px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 1rem;
+  border: 1px solid rgba(176, 125, 75, 0.15);
+}
+.trend-img-preview img {
+  width: 100%; height: 100%; object-fit: cover;
+  filter: grayscale(30%);
+}
+
+/* ====== MEMBERSHIP - STACKED CARDS ====== */
+#membership {
+  min-height: 100dvh;
+  padding: 6vh 6vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+}
+#membership::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(176, 125, 75, 0.02) 0%, transparent 60%);
+  pointer-events: none;
+}
+.membership-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+.membership-title {
+  font-size: clamp(2rem, 9vw, 5rem);
+  margin-bottom: 0.75rem;
+}
+.tier-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+.tier-card {
+  border: 1px solid rgba(242, 237, 230, 0.1);
+  padding: 1.75rem 1.5rem;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  background: rgba(15, 15, 18, 0.4);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+}
+.tier-card:hover, .tier-card:active {
+  border-color: var(--gold);
+  transform: translateY(-4px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.5), 0 0 30px rgba(176, 125, 75, 0.05);
+}
+.tier-card.featured {
+  border-color: var(--gold);
+  background: rgba(176, 125, 75, 0.03);
+  box-shadow: 0 0 40px rgba(176, 125, 75, 0.05);
+}
+.tier-card.featured:hover, .tier-card.featured:active {
+  box-shadow: 0 15px 30px rgba(0,0,0,0.5), 0 0 60px rgba(176, 125, 75, 0.1);
+}
+.tier-badge {
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gold);
+  color: var(--obsidian);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.15em;
+  padding: 0.35rem 1rem;
+  text-transform: uppercase;
+  box-shadow: 0 4px 20px rgba(176, 125, 75, 0.3);
+  border-radius: 0 0 4px 4px;
+}
+.tier-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--stone);
+  margin-bottom: 1rem;
+}
+.tier-price {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.5rem;
+  margin-bottom: 0.4rem;
+  line-height: 1;
+  transition: all 0.4s;
+}
+.tier-card:hover .tier-price, .tier-card:active .tier-price {
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(176, 125, 75, 0.2);
+}
+.tier-period {
+  color: var(--stone);
+  font-size: 0.8rem;
+  margin-bottom: 1.25rem;
+}
+.tier-features {
+  margin-bottom: 1.25rem;
+}
+.tier-feature {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  font-size: 0.8rem;
+  color: var(--stone);
+  border-bottom: 1px solid rgba(242, 237, 230, 0.05);
+  transition: all 0.3s;
+}
+.tier-feature.yes { color: var(--ivory); }
+.tier-feature svg { width: 14px; height: 14px; flex-shrink: 0; }
+.tier-card:hover .tier-feature.yes, .tier-card:active .tier-feature.yes {
+  color: var(--gold);
+}
+
+/* ====== FOOTER ====== */
+#footer {
+  padding: 4vh 6vw;
+  border-top: 1px solid rgba(242, 237, 230, 0.08);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  position: relative;
+  padding-bottom: calc(4vh + var(--bottom-nav-height) + var(--safe-bottom));
+}
+#footer a {
+  position: relative;
+  text-decoration: none;
+  transition: color 0.3s;
+  display: inline-block;
+  padding: 0.25rem 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--stone);
+}
+#footer a:hover, #footer a:active {
+  color: var(--ivory);
+}
+#footer a::after {
+  content: ''; position: absolute; bottom: 0px; left: 0;
+  width: 0; height: 1px; background: var(--gold);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#footer a:hover::after, #footer a:active::after { width: 100%; }
+#footer .footer-brand {
+  grid-column: span 2;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  font-style: italic;
+  color: var(--ivory);
+  margin-bottom: 0.5rem;
+}
+#footer .footer-tagline {
+  grid-column: span 2;
+  font-size: 0.8rem;
+  color: var(--stone);
+  line-height: 1.6;
+  max-width: 280px;
+  margin-bottom: 1rem;
+}
+#footer .footer-heading {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--stone);
+  margin-bottom: 0.75rem;
+}
+
+/* ====== AMBIENT PARTICLES ====== */
+.ambient-particles {
+  position: fixed; inset: 0; z-index: 9997;
+  pointer-events: none;
+}
+.ambient-particle {
+  position: absolute;
+  width: 2px; height: 2px;
+  background: rgba(176, 125, 75, 0.3);
+  border-radius: 50%;
+  animation: float 20s infinite ease-in-out;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+}
+
+/* ============================================ */
+/* TABLET (768px+) */
+/* ============================================ */
+@media (min-width: 768px) {
+  body { cursor: none; padding-bottom: 0; }
+  .cursor-dot, .cursor-ring { display: block; }
+  #bottom-nav { display: none; }
+  .desktop-nav { display: flex; }
+  #top-nav { padding: 1.5rem 3rem; }
+
+  #hero { padding: 0 5vw; padding-top: 0; }
+  .hero-title { font-size: clamp(3.5rem, 10vw, 9rem); margin-bottom: 2rem; }
+  .hero-sub { font-size: 1.05rem; max-width: 500px; margin-bottom: 3rem; }
+  .hero-cta { flex-direction: row; max-width: none; }
+  .hero-swipe-hint { display: none; }
+
+  .philosophy-cinematic { width: 50%; height: 100vh; position: absolute; left: 0; top: 0; }
+  .philosophy-cinematic::after {
+    background: linear-gradient(to right, var(--obsidian) 0%, transparent 30%, transparent 70%, var(--obsidian) 100%);
+  }
+  #philosophy { flex-direction: row; min-height: 100vh; }
+  .philosophy-content { width: 50%; margin-left: 50%; margin-top: 0; padding: 10vh 5vw; }
+  .philosophy-title { font-size: clamp(2.5rem, 4vw, 4.5rem); margin-bottom: 2rem; }
+  .philosophy-text { font-size: 1rem; margin-bottom: 1.5rem; }
+  .philosophy-stats { gap: 2rem; margin-top: 3rem; padding-top: 2rem; }
+  .philosophy-stat-value { font-size: 3rem; }
+  .philosophy-stat-label { font-size: 0.65rem; }
+
+  .loom-carousel { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; padding: 0; margin: 0; overflow: visible; }
+  .loom-item { flex: none; max-width: none; scroll-snap-align: none; }
+  .loom-carousel-dots { display: none; }
+  .loom-item-icon { width: 48px; height: 48px; margin-bottom: 1.5rem; }
+  .loom-item-title { font-size: 1.5rem; }
+  .loom-item-desc { font-size: 0.85rem; }
+
+  #stylist { flex-direction: row; }
+  .stylist-left { width: 50%; padding: 10vh 5vw; border-right: 1px solid rgba(242, 237, 230, 0.08); border-bottom: none; }
+  .stylist-right { width: 50%; padding: 10vh 3vw; min-height: auto; }
+  .stylist-title { font-size: clamp(2rem, 4vw, 4rem); margin-bottom: 2rem; }
+  .stylist-feature { gap: 1.5rem; margin-bottom: 2rem; }
+  .stylist-feature-title { font-size: 0.95rem; }
+  .stylist-feature-desc { font-size: 0.9rem; }
+
+  .terminal-header { font-size: 0.6rem; margin-bottom: 2rem; }
+  .terminal-chat { font-size: 0.8rem; max-height: 400px; margin-bottom: 2rem; }
+  .terminal-msg { margin-bottom: 1.5rem; padding: 1rem; }
+  .terminal-msg-user { margin-bottom: 1.5rem; }
+  .terminal-input { font-size: 0.8rem; }
+  .quick-prompts { gap: 0.75rem; margin-top: 1.5rem; }
+  .quick-prompt { padding: 0.6rem 1.2rem; }
+
+  #forge { padding: 12vh 5vw; }
+  .forge-glow-orb { width: 600px; height: 600px; }
+  .forge-header { margin-bottom: 4rem; }
+  .forge-orbit { margin-bottom: 4rem; }
+  .orbit-track { top: 24px; left: 10%; right: 10%; }
+  .orbit-node { gap: 0.75rem; }
+  .node-ring { width: 48px; height: 48px; }
+  .node-core { font-size: 0.65rem; }
+  .node-label { font-size: 0.55rem; max-width: none; }
+  .forge-stage { min-height: 400px; }
+  .forge-panel-title { margin-bottom: 2.5rem; }
+  .forge-cards { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+  .forge-card { padding: 2rem 1.5rem; gap: 1rem; }
+  .forge-card-visual { width: 48px; height: 48px; }
+  .forge-card-label { font-size: 1.2rem; }
+  .chromatic-swatch { width: 64px; height: 64px; }
+  .forge-result { align-items: center; padding: 2rem; }
+  .result-content { border-radius: 0; padding: 3rem; max-height: none; }
+  .result-sheet-handle { display: none; }
+  .result-header { margin-bottom: 2rem; padding-bottom: 1rem; }
+  .lookbook-title { font-size: 2rem; }
+  .lookbook-desc { font-size: 0.9rem; }
+  .result-meta { flex-direction: row; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .result-actions { flex-direction: row; }
+
+  .boutique-filters { gap: 1rem; margin-bottom: 3rem; }
+  .boutique-filter { padding: 0.8rem 1.5rem; }
+  .boutique-grid { grid-template-columns: repeat(4, 1fr); gap: 2rem; }
+  .boutique-card:nth-child(3n) { grid-column: span 1; }
+  .boutique-card-info { padding: 1.5rem; }
+  .boutique-card-brand { font-size: 0.7rem; }
+  .boutique-card-name { font-size: 1.3rem; }
+  .boutique-card-price { font-size: 0.8rem; }
+  .boutique-card-btn { bottom: 1.5rem; right: 1.5rem; }
+
+  .trends-header { flex-direction: row; justify-content: space-between; align-items: flex-end; margin-bottom: 4rem; }
+  .trend-item { padding: 2rem 0; }
+  .trend-item-header { cursor: default; }
+  .trend-num { font-size: 3rem; width: 80px; }
+  .trend-name { font-size: 2rem; }
+  .trend-content { max-height: none; opacity: 1; margin-top: 0; padding-left: 0; }
+  .trend-item.expanded .trend-content { max-height: none; }
+  .trend-item { display: grid; grid-template-columns: 100px 1fr 150px; gap: 3rem; align-items: center; }
+  .trend-item-header { grid-column: 1 / 3; }
+  .trend-heat { text-align: right; margin-top: 0; grid-column: 3; }
+  .trend-content { grid-column: 1 / 4; padding-left: 100px; }
+  .trend-chevron { display: none; }
+  .trend-img-preview { display: block; position: absolute; right: 200px; top: 50%; transform: translateY(-50%) scale(0.8); width: 200px; height: 280px; opacity: 0; pointer-events: none; transition: all 0.5s; border-radius: 4px; }
+  .trend-item:hover .trend-img-preview { opacity: 1; transform: translateY(-50%) scale(1); }
+
+  .tier-grid { grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+  .tier-card { padding: 3rem 2.5rem; }
+  .tier-price { font-size: 4rem; }
+  .tier-period { font-size: 0.9rem; margin-bottom: 2rem; }
+  .tier-features { margin-bottom: 2rem; }
+  .tier-feature { padding: 0.6rem 0; font-size: 0.85rem; }
+
+  #footer { grid-template-columns: 2fr 1fr 1fr 1fr; gap: 4rem; padding: 8vh 5vw; padding-bottom: 8vh; }
+  #footer .footer-brand { grid-column: span 1; }
+  #footer .footer-tagline { grid-column: span 1; }
+}
+
+/* ============================================ */
+/* DESKTOP (1024px+) */
+/* ============================================ */
+@media (min-width: 1024px) {
+  .loom-carousel { grid-template-columns: repeat(3, 1fr); gap: 3rem; }
+  .forge-cards { grid-template-columns: repeat(3, 1fr); }
+  .boutique-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ============================================ */
+/* LARGE DESKTOP (1440px+) */
+/* ============================================ */
+@media (min-width: 1440px) {
+  .hero-title { font-size: 9rem; }
+  .philosophy-title { font-size: 4.5rem; }
+  .loom-title { font-size: 5rem; }
+  .stylist-title { font-size: 4rem; }
+  .forge-title { font-size: 5rem; }
+  .boutique-title { font-size: 5rem; }
+  .trends-title { font-size: 5rem; }
+  .membership-title { font-size: 5rem; }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .boutique-card:hover { transform: none; }
+  .boutique-card:hover .boutique-card-img { transform: none; filter: grayscale(30%); }
+  .boutique-card:active { transform: translateY(-6px); }
+  .boutique-card:active .boutique-card-img { transform: scale(1.1); filter: grayscale(0%); }
+  .loom-item:hover { transform: none; }
+  .loom-item:active { transform: translateY(-4px); border-color: var(--gold); }
+  .tier-card:hover { transform: none; }
+  .tier-card:active { transform: translateY(-4px); }
+  .forge-card:hover { transform: none; }
+  .forge-card:active { transform: translateY(-3px) scale(1.02); }
+  .trend-item:hover { padding-left: 0; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}
+</style>
+<base target="_blank">
+<base target="_blank">
 </head>
-<body :class="{'dark-mode': darkMode}" class="min-h-screen font-sans transition-colors duration-300">
-    <div id="app" v-cloak>
-        <div id="app" class="flex flex-col min-h-screen">
-            <nav class="bg-white dark:bg-gray-800 shadow-lg fixed w-full z-50 transition-colors duration-300">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex justify-between h-16">
-                        <div class="flex items-center">
-                            <a href="#" class="flex-shrink-0 flex items-center">
-                                <lottie-player src="https://assets3.lottiefiles.com/packages/lf20_jcikwtux.json" background="transparent" speed="1" style="width: 50px; height: 50px;" loop autoplay></lottie-player>
-                                <span class="ml-2 text-xl font-bold text-purple-600">FashionAI </span>
-                            </a>
-                        </div>
-                        <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                            <a href="#features" class="text-gray-500 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">Features</a>
-                            <a href="#ai-recommendations" class="text-gray-500 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">AI Recommendations</a>
-                            <a href="#virtual-closet" class="text-gray-500 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">Virtual Closet</a>
-                            <a href="#shop" class="text-gray-500 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">Shop</a>
-                            <a href="#trends" class="text-gray-500 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">Trends</a>
-                        </div>
-                        <div class="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
-                            <button @click="toggleDarkMode" class="text-gray-500 hover:text-purple-600">
-                                <svg v-if="!darkMode" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                                </svg>
-                                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                                </svg>
-                            </button>
-                            <button v-if="!user" @click="toggleLoginModal" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300">
-                                Login
-                            </button>
-                            <div v-else class="relative">
-                                <button @click="toggleUserMenu" class="flex items-center">
-                                    <img :src="user.avatar" alt="User Avatar" class="w-8 h-8 rounded-full">
-                                    <span class="ml-2 text-gray-700 dark:text-gray-300">{{ user.name }}</span>
-                                </button>
-                                <div v-if="showUserMenu" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50">
-                                    <a href="#" @click="goToProfile" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Profile</a>
-                                    <a href="#" @click="logout" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Logout</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-    
-            <main class="flex-grow">
-                <section id="hero" class="pt-24 pb-16 text-center relative overflow-hidden">
-                    <div class="absolute inset-0 z-0">
-                        <canvas id="heroCanvas" class="w-full h-full"></canvas>
-                    </div>
-                    <div class="relative z-10">
-                        <h1 class="text-5xl font-bold text-gray-800 dark:text-gray-100 mb-4">Welcome to FashionAI </h1>
-                        <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">Your intelligent wardrobe assistant powered by AI</p>
-                        <a href="#features" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full text-lg transition duration-300 ease-in-out transform hover:scale-105">
-                            Explore Features
-                        </a>
-                    </div>
-                </section>
-    
-                <section id="features" class="py-20 bg-white dark:bg-gray-900 transition-colors duration-300">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-12">Innovative Features</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div class="bg-purple-100 dark:bg-purple-900 p-6 rounded-lg shadow-md transform hover:scale-105 transition duration-300">
-                                <h3 class="text-xl font-semibold text-purple-600 dark:text-purple-300 mb-4">AI Outfit Generator</h3>
-                                <p class="text-gray-700 dark:text-gray-300">Get personalized outfit suggestions based on your style, occasion, and weather.</p>
-                            </div>
-                            <div class="bg-pink-100 dark:bg-pink-900 p-6 rounded-lg shadow-md transform hover:scale-105 transition duration-300">
-                                <h3 class="text-xl font-semibold text-pink-600 dark:text-pink-300 mb-4">Virtual Closet</h3>
-                                <p class="text-gray-700 dark:text-gray-300">Digitize your wardrobe and access it anytime, anywhere. Organize and plan outfits effortlessly.</p>
-                            </div>
-                            <div class="bg-blue-100 dark:bg-blue-900 p-6 rounded-lg shadow-md transform hover:scale-105 transition duration-300">
-                                <h3 class="text-xl font-semibold text-blue-600 dark:text-blue-300 mb-4">Style Analytics</h3>
-                                <p class="text-gray-700 dark:text-gray-300">Get insights into your fashion preferences and wearing habits with detailed analytics.</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-    
-                <section id="ai-recommendations" class="py-20 bg-gray-100 dark:bg-gray-800 transition-colors duration-300">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-12">AI-Powered Outfit Recommendations</h2>
-                        <div class="flex flex-col md:flex-row items-center justify-center space-y-8 md:space-y-0 md:space-x-12">
-                            <div class="w-full md:w-1/2">
-                                <div id="outfitContainer" class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow-lg min-h-[400px] flex flex-wrap justify-center items-center">
-                                    <div v-for="item in generatedOutfit" :key="item.id" class="m-2 cursor-move">
-                                        <img :src="item.image" :alt="item.name" class="w-32 h-32 object-cover rounded">
-                                        <p class="text-center mt-2 text-gray-700 dark:text-gray-300">{{ item.name }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="w-full md:w-1/2">
-                                <h3 class="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Smart Outfit Suggestions</h3>
-                                <p class="text-gray-700 dark:text-gray-300 mb-6">Our advanced AI analyzes your style preferences, body type, and current trends to suggest perfect outfits for any occasion.</p>
-                                <button @click="generateOutfit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full text-lg transition duration-300 ease-in-out transform hover:scale-105">
-                                    Generate Outfit
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-    
-                <section id="virtual-closet" class="py-20 bg-white dark:bg-gray-900 transition-colors duration-300">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-12">Your Virtual Closet</h2>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div v-for="item in virtualCloset" :key="item.id" class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-md">
-                                <img :src="item.image" :alt="item.name" class="w-full h-48 object-cover rounded-md mb-2">
-                                <p class="text-gray-800 dark:text-gray-200 font-semibold">{{ item.name }}</p>
-                                <p class="text-gray-600 dark:text-gray-400 text-sm">{{ item.category }}</p>
-                            </div>
-                        </div>
-                        <div class="mt-8 text-center">
-                            <button @click="addToCloset" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300">
-                                Add New Item
-                            </button>
-                        </div>
-                    </div>
-                </section>
-    
-                <section id="shop" class="py-20 bg-gray-100 dark:bg-gray-800 transition-colors duration-300">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-12">Shop Recommended Items</h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                            <div v-for="item in shopItems" :key="item.id" class="bg-white dark:bg-gray-700 rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition duration-300">
-                                <img :src="item.image" :alt="item.name" class="w-full h-64 object-cover">
-                                <div class="p-4">
-                                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">{{ item.name }}</h3>
-                                    <p class="text-gray-600 dark:text-gray-400 mb-4">${{ item.price.toFixed(2) }}</p>
-                                    <button @click="addToCart(item)" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-300">
-                                        Add to Cart
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-    
-                <section id="trends" class="py-20 bg-white dark:bg-gray-900 transition-colors duration-300">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-12">Seasonal Trend Forecasts</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div v-for="trend in trendForecasts" :key="trend.id" class="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden shadow-md transform hover:scale-105 transition duration-300">
-                                <img :src="trend.image" :alt="trend.name" class="w-full h-48 object-cover">
-                                <div class="p-4">
-                                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">{{ trend.name }}</h3>
-                                    <p class="text-gray-600 dark:text-gray-400">{{ trend.description }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </main>
-    
-            <footer class="bg-gray-800 text-white py-8 transition-colors duration-300">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex flex-col md:flex-row justify-between items-center">
-                        <div class="mb-4 md:mb-0">
-                            <h3 class="text-xl font-bold">FashionAI 2.0</h3>
-                            <p class="text-sm text-gray-400">Your intelligent wardrobe assistant</p>
-                        </div>
-                        <div class="flex space-x-6">
-                            <a href="#" class="text-gray-400 hover:text-white transition duration-300">
-                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd" />
-                                </svg>
-                            </a>
-                            <a href="#" class="text-gray-400 hover:text-white transition duration-300">
-                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clip-rule="evenodd" />
-                                </svg>
-                            </a>
-                            <a href="#" class="text-gray-400 hover:text-white transition duration-300">
-                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="mt-8 border-t border-gray-700 pt-8 flex flex-col md:flex-row justify-between">
-                        <nav class="flex flex-wrap justify-center md:justify-start space-x-6">
-                            <a href="#" class="text-gray-400 hover:text-white transition duration-300">About Us</a>
-                            <a href="#" class="text-gray-400 hover:text-white transition duration-300">Privacy Policy</a>
-                            <a href="#" class="text-gray-400 hover:text-white transition duration-300">Terms of Service</a>
-                            <a href="#" class="text-gray-400 hover:text-white transition duration-300">Contact</a>
-                        </nav>
-                        <p class="text-gray-400 text-sm text-center md:text-right mt-4 md:mt-0">
-                            &copy; 2024 FashionAI 2.0. All rights reserved.
-                        </p>
-                    </div>
-                </div>
-            </footer>
+<body>
 
-        <!-- Login Modal -->
-        <div v-if="showLoginModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" id="login-modal">
-            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
-                <div class="mt-3 text-center">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">Login</h3>
-                    <div class="mt-2 px-7 py-3">
-                        <input v-model="loginEmail" type="email" placeholder="Email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        <input v-model="loginPassword" type="password" placeholder="Password" class="mt-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    </div>
-                    <div class="items-center px-4 py-3">
-                        <button @click="login" class="px-4 py-2 bg-purple-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-300">
-                            Login
-                        </button>
-                    </div>
-                    <button @click="toggleLoginModal" class="absolute top-0 right-0 mt-4 mr-4 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
+<!-- Custom Cursor -->
+<div class="cursor-dot" id="cursor-dot"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<!-- Scroll Progress -->
+<div class="scroll-progress" id="scroll-progress"></div>
+
+<!-- Ambient Particles -->
+<div class="ambient-particles" id="ambient-particles"></div>
+
+<!-- Preloader -->
+<div id="preloader">
+  <div class="preloader-counter" id="preloader-counter">00</div>
+  <div class="preloader-bar">
+    <div class="preloader-bar-fill" id="preloader-bar-fill"></div>
+  </div>
+  <p class="preloader-text" id="preloader-text">Weaving the atelier</p>
+</div>
+
+<div class="grain"></div>
+
+<!-- ====== TOP NAVBAR (Desktop) ====== -->
+<nav id="top-nav">
+  <a href="#" class="nav-brand">Maison Aria</a>
+  <div class="desktop-nav flex items-center gap-8">
+    <a href="#philosophy">Atelier</a>
+    <a href="#boutique">Collection</a>
+    <a href="#stylist">Consult</a>
+    <a href="#membership">Access</a>
+  </div>
+</nav>
+
+<!-- ====== BOTTOM FLOATING NAVBAR (Mobile) ====== -->
+<nav id="bottom-nav">
+  <a href="#philosophy" class="bottom-nav-item active" data-section="philosophy">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+    Atelier
+  </a>
+  <a href="#boutique" class="bottom-nav-item" data-section="boutique">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z"/></svg>
+    Shop
+  </a>
+  <a href="#stylist" class="bottom-nav-item" data-section="stylist">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>
+    ARIA
+  </a>
+  <a href="#forge" class="bottom-nav-item" data-section="forge">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.048 4.025a3 3 0 01-4.293 0 2.25 2.25 0 01-2.4-2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/></svg>
+    Forge
+  </a>
+  <a href="#membership" class="bottom-nav-item" data-section="membership">
+    <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+    Access
+  </a>
+</nav>
+
+<!-- ==================== HERO ==================== -->
+<section id="hero" class="section">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-content">
+    <p class="eyebrow hero-eyebrow">Digital Couture System</p>
+    <h1 class="display-massive hero-title">
+      <span class="hero-title-line"><span id="hero-line1">FASHION</span></span>
+      <span class="hero-title-line"><span id="hero-line2"><em>INTELLIGENCE</em></span></span>
+    </h1>
+    <p class="hero-sub">
+      An intelligent wardrobe system that reads fabric, weather, and intent — then assembles garments that carry meaning.
+    </p>
+    <div class="hero-cta">
+      <a href="#stylist" class="btn-gold magnetic-wrap">Consult ARIA</a>
+      <a href="#forge" class="btn-ghost magnetic-wrap">Forge Look</a>
+    </div>
+  </div>
+  <div class="hero-swipe-hint">
+    <div class="swipe-line"></div>
+    <p class="swipe-text">Swipe to explore</p>
+  </div>
+</section>
+
+<!-- ==================== PHILOSOPHY ==================== -->
+<section id="philosophy" class="section">
+  <div class="philosophy-cinematic">
+    <video autoplay muted loop playsinline poster="https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1200&q=80">
+      <source src="206029.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="philosophy-content">
+    <p class="eyebrow mb-6 reveal">01 — Philosophy</p>
+    <h2 class="display-massive philosophy-title reveal reveal-delay-1">
+      Style is<br>not <em>accidental.</em>
+    </h2>
+    <p class="philosophy-text reveal reveal-delay-2">
+      We catalogue every thread in your wardrobe — fibre, drape, chroma, versatility — and weave a living style map. No more decision fatigue. Only intention.
+    </p>
+    <p class="philosophy-text reveal reveal-delay-3">
+      Dressing well is self-respect. Our system binds decades of editorial knowledge with meteorological data and calendar awareness to craft looks that feel authored.
+    </p>
+    <div class="philosophy-stats">
+      <div>
+        <p class="philosophy-stat-value" data-count="2400000">0</p>
+        <p class="eyebrow philosophy-stat-label">Looks Woven</p>
+      </div>
+      <div>
+        <p class="philosophy-stat-value" data-count="94">0</p>
+        <p class="eyebrow philosophy-stat-label">Accuracy %</p>
+      </div>
+      <div>
+        <p class="philosophy-stat-value" data-count="12">0</p>
+        <p class="eyebrow philosophy-stat-label">Min Saved</p>
+      </div>
+      <div>
+        <p class="philosophy-stat-value" data-count="87">0</p>
+        <p class="eyebrow philosophy-stat-label">Style Score</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== LOOM ==================== -->
+<section id="loom" class="section">
+  <canvas id="loom-canvas"></canvas>
+  <div class="loom-content">
+    <div class="loom-header">
+      <p class="eyebrow mb-4 reveal">02 — The Loom</p>
+      <h2 class="display-massive loom-title reveal reveal-delay-1">
+        Every thread<br><em>connected.</em>
+      </h2>
+    </div>
+    <div class="loom-carousel" id="loom-carousel">
+      <div class="loom-item reveal reveal-delay-1">
+        <div class="loom-item-icon">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
         </div>
+        <p class="loom-item-title">Wardrobe Analysis</p>
+        <p class="loom-item-desc">Upload once. We detect fabric, colour, cut, and assign versatility scores.</p>
+      </div>
+      <div class="loom-item reveal reveal-delay-2">
+        <div class="loom-item-icon">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z"/></svg>
+        </div>
+        <p class="loom-item-title">Weather Sync</p>
+        <p class="loom-item-desc">Real-time forecasts shape every suggestion. We know before you check.</p>
+      </div>
+      <div class="loom-item reveal reveal-delay-3">
+        <div class="loom-item-icon">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+        </div>
+        <p class="loom-item-title">Calendar Weave</p>
+        <p class="loom-item-desc">Meeting at 10, lunch at 1, rooftop at 7? We build for every event.</p>
+      </div>
+      <div class="loom-item reveal reveal-delay-1">
+        <div class="loom-item-icon">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5"/></svg>
+        </div>
+        <p class="loom-item-title">Trend Radar</p>
+        <p class="loom-item-desc">Live fashion intelligence mapped to items you already own.</p>
+      </div>
+      <div class="loom-item reveal reveal-delay-2">
+        <div class="loom-item-icon">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/></svg>
+        </div>
+        <p class="loom-item-title">Style Analytics</p>
+        <p class="loom-item-desc">Deep insights into how you dress. Cost-per-wear and blind spots.</p>
+      </div>
+      <div class="loom-item reveal reveal-delay-3">
+        <div class="loom-item-icon">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
+        </div>
+        <p class="loom-item-title">Virtual Closet</p>
+        <p class="loom-item-desc">Your wardrobe, always with you. Digitise and build from anywhere.</p>
+      </div>
+    </div>
+    <div class="loom-carousel-dots" id="loom-dots">
+      <div class="loom-dot active"></div>
+      <div class="loom-dot"></div>
+      <div class="loom-dot"></div>
+      <div class="loom-dot"></div>
+      <div class="loom-dot"></div>
+      <div class="loom-dot"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== STYLIST ==================== -->
+<section id="stylist" class="section">
+  <div class="stylist-left">
+    <p class="eyebrow mb-6 reveal">03 — The Stylist</p>
+    <h2 class="display-massive stylist-title reveal reveal-delay-1">
+      Meet ARIA.<br><em>Your curator.</em>
+    </h2>
+    <div class="stylist-feature reveal reveal-delay-2">
+      <div class="stylist-feature-line"></div>
+      <div>
+        <p class="stylist-feature-title">Natural Language Outfit Building</p>
+        <p class="stylist-feature-desc">Describe the occasion. ARIA constructs the complete look from your wardrobe.</p>
+      </div>
+    </div>
+    <div class="stylist-feature reveal reveal-delay-2">
+      <div class="stylist-feature-line"></div>
+      <div>
+        <p class="stylist-feature-title">Chromatic Intelligence</p>
+        <p class="stylist-feature-desc">Advanced colour theory applied to your actual garments. Complementary, analogous, triadic.</p>
+      </div>
+    </div>
+    <div class="stylist-feature reveal reveal-delay-3">
+      <div class="stylist-feature-line"></div>
+      <div>
+        <p class="stylist-feature-title">Dresscode Awareness</p>
+        <p class="stylist-feature-desc">From gallery openings to black-tie galas. Every event understood.</p>
+      </div>
+    </div>
+    <p class="eyebrow mt-8 mb-4 reveal reveal-delay-3">Try asking:</p>
+    <div class="quick-prompts reveal reveal-delay-4">
+      <button class="quick-prompt">Agency interview</button>
+      <button class="quick-prompt">Date night</button>
+      <button class="quick-prompt">Gallery opening</button>
+      <button class="quick-prompt">Summer streets</button>
+    </div>
+  </div>
+  <div class="stylist-right">
+    <div class="terminal-header">
+      <div class="terminal-blink"></div>
+      ARIA_INTELLIGENCE_V3.1 // ONLINE
+    </div>
+    <div class="terminal-chat" id="terminal-chat">
+      <div class="terminal-msg" style="border-color: var(--stone);">
+        <span style="color: var(--stone);">System initialized. Style matrix loaded.</span>
+      </div>
+      <div class="terminal-msg">
+        <span style="color: var(--gold);">ARIA:</span> Welcome. I am your style intelligence. Describe your next event — I will craft the perfect ensemble.
+      </div>
+    </div>
+    <div class="terminal-input-line">
+      <span class="terminal-prompt">></span>
+      <input type="text" class="terminal-input" id="terminal-input" placeholder="Describe your occasion..." autocomplete="off">
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FORGE ==================== -->
+<section id="forge" class="section">
+  <div class="forge-ambient">
+    <div class="forge-particle-field" id="forge-particles"></div>
+    <div class="forge-glow-orb"></div>
+  </div>
+
+  <div class="forge-container">
+    <div class="forge-header">
+      <p class="eyebrow forge-eyebrow reveal">04 — The Forge</p>
+      <h2 class="display-massive forge-title reveal reveal-delay-1">
+        <span class="forge-title-line">Tell us the</span>
+        <span class="forge-title-line"><em class="text-gold">occasion.</em></span>
+      </h2>
+      <p class="forge-subtitle reveal reveal-delay-2">We forge the look.</p>
     </div>
 
-    <script>
-        new Vue({
-            el: '#app',
-            data: {
-                showLoginModal: false,
-                showUserMenu: false,
-                loginEmail: '',
-                loginPassword: '',
-                user: null,
-                darkMode: false,
-                shopItems: [
-                    { id: 1, name: 'Summer Dress', price: 59.99, image: 'Summer Dress.jpg' },
-                    { id: 2, name: 'Leather Jacket', price: 129.99, image: 'Leather Jacket.jpg' },
-                    { id: 3, name: 'Sneakers', price: 79.99, image: 'Sneakers1.jpg' },
-                    { id: 4, name: 'Jeans', price: 49.99, image: 'Jeans.jpg' },
-                ],
-                trendForecasts: [
-                    { id: 1, name: 'Neon Accents', description: 'Bright neon colors are making a comeback in accessories.', image: 'Neon Accents.jpg' },
-                    { id: 2, name: 'Oversized Blazers', description: 'Relaxed, oversized blazers are trending for both casual and formal wear.', image: 'Oversized Blazers.jpg' },
-                    { id: 3, name: 'Sustainable Fabrics', description: 'Eco-friendly, sustainable materials are becoming increasingly popular.', image: 'Sustainable Fabrics.jpg' },
-                ],
-                generatedOutfit: [],
-                cart: [],
-                virtualCloset: [],
-                userPoints: 0,
-            },
-            mounted() {
-                this.loadUserFromLocalStorage();
-                this.loadCartFromLocalStorage();
-                this.loadVirtualClosetFromLocalStorage();
-                this.loadDarkModeFromLocalStorage();
-                this.$nextTick(() => {
-                    this.initHeroCanvas();
-                    this.initDragAndDrop();
-                });
-            },
-            methods: {
-                toggleLoginModal() {
-                    this.showLoginModal = !this.showLoginModal;
-                },
-                toggleUserMenu() {
-                    this.showUserMenu = !this.showUserMenu;
-                },
-                login() {
-                    if (this.loginEmail && this.loginPassword) {
-                        this.user = {
-                            name: 'John Doe',
-                            email: this.loginEmail,
-                            avatar: 'https://source.unsplash.com/100x100/?portrait'
-                        };
-                        localStorage.setItem('user', JSON.stringify(this.user));
-                        this.showLoginModal = false;
-                        this.userPoints = 0;
-                        this.saveUserPointsToLocalStorage();
-                    }
-                },
-                logout() {
-                    this.user = null;
-                    localStorage.removeItem('user');
-                    this.showUserMenu = false;
-                    this.userPoints = 0;
-                    this.saveUserPointsToLocalStorage();
-                },
-                loadUserFromLocalStorage() {
-                    const savedUser = localStorage.getItem('user');
-                    if (savedUser) {
-                        this.user = JSON.parse(savedUser);
-                    }
-                    const savedPoints = localStorage.getItem('userPoints');
-                    if (savedPoints) {
-                        this.userPoints = parseInt(savedPoints);
-                    }
-                },
-                generateOutfit() {
-                    // Simulated AI outfit generation - replace with actual API call
-                    this.generatedOutfit = [
-                        { id: 1, name: 'White T-Shirt', image: 'white-tshirt.jpg' },
-                        { id: 2, name: 'Blue Jeans', image: 'blue-jeans.jpg' },
-                        { id: 3, name: 'Sneakers', image: 'Sneakers.jpg' },
-                        { id: 4, name: 'Denim Jacket', image: 'Denim Jacket.jpg' },
-                    ];
-                    this.addUserPoints(10);
-                },
-                addToCart(item) {
-                    this.cart.push(item);
-                    this.saveCartToLocalStorage();
-                    this.addUserPoints(5);
-                    alert(`Added ${item.name} to your cart!`);
-                },
-                loadCartFromLocalStorage() {
-                    const savedCart = localStorage.getItem('cart');
-                    if (savedCart) {
-                        this.cart = JSON.parse(savedCart);
-                    }
-                },
-                saveCartToLocalStorage() {
-                    localStorage.setItem('cart', JSON.stringify(this.cart));
-                },
-                addToCloset() {
-                    const newItem = {
-                        id: this.virtualCloset.length + 1,
-                        name: 'New Item',
-                        category: 'Tops',
-                        image: 'https://source.unsplash.com/100x100/?fashion'
-                    };
-                    this.virtualCloset.push(newItem);
-                    this.saveVirtualClosetToLocalStorage();
-                    this.addUserPoints(15);
-                },
-                loadVirtualClosetFromLocalStorage() {
-                    const savedCloset = localStorage.getItem('virtualCloset');
-                    if (savedCloset) {
-                        this.virtualCloset = JSON.parse(savedCloset);
-                    }
-                },
-                saveVirtualClosetToLocalStorage() {
-                    localStorage.setItem('virtualCloset', JSON.stringify(this.virtualCloset));
-                },
-                toggleDarkMode() {
-                    this.darkMode = !this.darkMode;
-                    localStorage.setItem('darkMode', this.darkMode);
-                    if (this.darkMode) {
-                        document.documentElement.classList.add('dark-mode');
-                    } else {
-                        document.documentElement.classList.remove('dark-mode');
-                    }
-                },
-                loadDarkModeFromLocalStorage() {
-                    const savedDarkMode = localStorage.getItem('darkMode');
-                    if (savedDarkMode !== null) {
-                        this.darkMode = JSON.parse(savedDarkMode);
-                        if (this.darkMode) {
-                            document.documentElement.classList.add('dark-mode');
-                        }
-                    }
-                },
-                addUserPoints(points) {
-                    if (this.user) {
-                        this.userPoints += points;
-                        this.saveUserPointsToLocalStorage();
-                    }
-                },
-                saveUserPointsToLocalStorage() {
-                    localStorage.setItem('userPoints', this.userPoints.toString());
-                },
-                initHeroCanvas() {
-                    const canvas = document.getElementById('heroCanvas');
-                    if (!canvas) return;
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = canvas.offsetWidth;
-                    canvas.height = canvas.offsetHeight;
+    <div class="forge-orbit reveal reveal-delay-2">
+      <div class="orbit-track">
+        <div class="orbit-progress" id="orbit-progress"></div>
+      </div>
+      <div class="orbit-steps">
+        <button class="orbit-node active" data-step="1" data-label="Gender">
+          <span class="node-ring"></span>
+          <span class="node-core">01</span>
+          <span class="node-label">Gender</span>
+        </button>
+        <button class="orbit-node" data-step="2" data-label="Occasion">
+          <span class="node-ring"></span>
+          <span class="node-core">02</span>
+          <span class="node-label">Occasion</span>
+        </button>
+        <button class="orbit-node" data-step="3" data-label="Vibe">
+          <span class="node-ring"></span>
+          <span class="node-core">03</span>
+          <span class="node-label">Vibe</span>
+        </button>
+        <button class="orbit-node" data-step="4" data-label="Weather">
+          <span class="node-ring"></span>
+          <span class="node-core">04</span>
+          <span class="node-label">Weather</span>
+        </button>
+        <button class="orbit-node" data-step="5" data-label="Chromatic">
+          <span class="node-ring"></span>
+          <span class="node-core">05</span>
+          <span class="node-label">Chromatic</span>
+        </button>
+      </div>
+    </div>
 
-                    const particles = [];
-                    const particleCount = 100;
+    <div class="forge-stage">
+      <!-- STEP 1: GENDER -->
+      <div class="forge-panel active" data-step="1">
+        <p class="forge-panel-title">Who are we dressing?</p>
+        <div class="forge-cards">
+          <button class="forge-card" data-value="Male">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <circle cx="32" cy="16" r="8"/>
+                <path d="M32 24v16M24 36h16M20 48h24"/>
+                <path d="M26 32l6 6 6-6"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Male</span>
+            <span class="forge-card-hint">Masculine silhouettes</span>
+          </button>
+          <button class="forge-card" data-value="Female">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <circle cx="32" cy="16" r="8"/>
+                <path d="M32 24v28M24 36h16M28 52l4 8 4-8"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Female</span>
+            <span class="forge-card-hint">Feminine silhouettes</span>
+          </button>
+          <button class="forge-card" data-value="Non-binary">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <circle cx="32" cy="16" r="8"/>
+                <path d="M32 24v20M22 36h20M26 48l6 6 6-6"/>
+                <path d="M24 28l8 8 8-8"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Non-binary</span>
+            <span class="forge-card-hint">Fluid & unbounded</span>
+          </button>
+        </div>
+      </div>
 
-                    for (let i = 0; i < particleCount; i++) {
-                        particles.push({
-                            x: Math.random() * canvas.width,
-                            y: Math.random() * canvas.height,
-                            radius: Math.random() * 2 + 1,
-                            color: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.5)`,
-                            speedX: Math.random() * 3 - 1.5,
-                            speedY: Math.random() * 3 - 1.5
-                        });
-                    }
+      <!-- STEP 2: OCCASION -->
+      <div class="forge-panel" data-step="2">
+        <p class="forge-panel-title">What is the occasion?</p>
+        <div class="forge-cards">
+          <button class="forge-card" data-value="Work">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <rect x="12" y="20" width="40" height="32" rx="2"/>
+                <path d="M20 20V14a12 12 0 0124 0v6"/>
+                <path d="M24 36h16M24 42h12"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Work</span>
+            <span class="forge-card-hint">Boardroom to breakout</span>
+          </button>
+          <button class="forge-card" data-value="Date Night">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M32 12c-8 0-14 6-14 14 0 10 14 26 14 26s14-16 14-26c0-8-6-14-14-14z"/>
+                <circle cx="32" cy="26" r="4"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Date Night</span>
+            <span class="forge-card-hint">Intimate & magnetic</span>
+          </button>
+          <button class="forge-card" data-value="Gallery">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <rect x="8" y="12" width="48" height="40" rx="2"/>
+                <circle cx="26" cy="28" r="6"/>
+                <path d="M8 44l14-14 8 8 10-10 16 16"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Gallery</span>
+            <span class="forge-card-hint">Cultural & curated</span>
+          </button>
+          <button class="forge-card" data-value="Casual">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M20 20l4 24h16l4-24"/>
+                <path d="M18 20h28"/>
+                <circle cx="32" cy="14" r="6"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Casual</span>
+            <span class="forge-card-hint">Effortless elevation</span>
+          </button>
+          <button class="forge-card" data-value="Black Tie">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M20 16l12 8 12-8"/>
+                <path d="M32 24v28"/>
+                <path d="M24 52h16"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Black Tie</span>
+            <span class="forge-card-hint">Peak formality</span>
+          </button>
+        </div>
+      </div>
 
-                    function animate() {
-                        requestAnimationFrame(animate);
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      <!-- STEP 3: VIBE -->
+      <div class="forge-panel" data-step="3">
+        <p class="forge-panel-title">Set the vibe.</p>
+        <div class="forge-cards">
+          <button class="forge-card" data-value="Minimalist">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <rect x="20" y="20" width="24" height="24"/>
+                <circle cx="32" cy="32" r="4"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Minimalist</span>
+            <span class="forge-card-hint">Less is power</span>
+          </button>
+          <button class="forge-card" data-value="Bold">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M16 32h32M32 16v32"/>
+                <circle cx="32" cy="32" r="20"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Bold</span>
+            <span class="forge-card-hint">Command attention</span>
+          </button>
+          <button class="forge-card" data-value="Classic">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <rect x="14" y="14" width="36" height="36" rx="18"/>
+                <path d="M22 32h20M32 22v20"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Classic</span>
+            <span class="forge-card-hint">Timeless precision</span>
+          </button>
+          <button class="forge-card" data-value="Streetwear">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M16 48l8-32 8 16 8-16 8 32"/>
+                <path d="M12 48h40"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Streetwear</span>
+            <span class="forge-card-hint">Urban edge</span>
+          </button>
+          <button class="forge-card" data-value="Bohemian">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M32 8c-12 0-20 12-20 24s8 24 20 24 20-12 20-24-8-24-20-24z"/>
+                <path d="M32 20v24M20 32h24"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Bohemian</span>
+            <span class="forge-card-hint">Free & flowing</span>
+          </button>
+          <button class="forge-card" data-value="Quiet Luxury">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <rect x="16" y="24" width="32" height="24" rx="2"/>
+                <path d="M24 24v-6a8 8 0 0116 0v6"/>
+                <circle cx="32" cy="36" r="3"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Quiet Luxury</span>
+            <span class="forge-card-hint">Understated wealth</span>
+          </button>
+        </div>
+      </div>
 
-                        particles.forEach(particle => {
-                            particle.x += particle.speedX;
-                            particle.y += particle.speedY;
+      <!-- STEP 4: WEATHER -->
+      <div class="forge-panel" data-step="4">
+        <p class="forge-panel-title">What is the weather?</p>
+        <div class="forge-cards">
+          <button class="forge-card" data-value="Hot">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <circle cx="32" cy="32" r="12"/>
+                <path d="M32 8v8M32 48v8M8 32h8M48 32h8M15 15l6 6M43 43l6 6M15 49l6-6M43 21l6-6"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Hot</span>
+            <span class="forge-card-hint">30C+ / 86F+</span>
+          </button>
+          <button class="forge-card" data-value="Warm">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <circle cx="32" cy="32" r="10"/>
+                <path d="M32 10v6M32 48v6M10 32h6M48 32h6"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Warm</span>
+            <span class="forge-card-hint">20-30C / 68-86F</span>
+          </button>
+          <button class="forge-card" data-value="Cool">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M32 8v48M32 8l-8 8M32 8l8 8"/>
+                <path d="M20 24h24M20 40h24"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Cool</span>
+            <span class="forge-card-hint">10-20C / 50-68F</span>
+          </button>
+          <button class="forge-card" data-value="Cold">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M32 8v48"/>
+                <path d="M24 16l8-8 8 8M24 32l8-8 8 8M24 48l8-8 8 8"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Cold</span>
+            <span class="forge-card-hint">0-10C / 32-50F</span>
+          </button>
+          <button class="forge-card" data-value="Rainy">
+            <div class="forge-card-visual">
+              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M16 28a16 16 0 0132 0"/>
+                <path d="M20 36l-4 8M32 36l-4 8M44 36l-4 8"/>
+              </svg>
+            </div>
+            <span class="forge-card-label">Rainy</span>
+            <span class="forge-card-hint">Wet conditions</span>
+          </button>
+        </div>
+      </div>
 
-                            if (particle.x < 0 || particle.x > canvas.width) particle.speedX *= -1;
-                            if (particle.y < 0 || particle.y > canvas.height) particle.speedY *= -1;
+      <!-- STEP 5: CHROMATIC -->
+      <div class="forge-panel" data-step="5">
+        <p class="forge-panel-title">Choose your chromatic.</p>
+        <div class="forge-cards forge-chromatic">
+          <button class="forge-card chromatic-card" data-value="Neutral">
+            <div class="chromatic-swatch" style="background: linear-gradient(135deg, #e8e4df 0%, #b8b0a8 100%);"></div>
+            <span class="forge-card-label">Neutral</span>
+            <span class="forge-card-hint">Ivory, taupe, stone</span>
+          </button>
+          <button class="forge-card chromatic-card" data-value="All Black">
+            <div class="chromatic-swatch" style="background: linear-gradient(135deg, #2a2a2a 0%, #050505 100%);"></div>
+            <span class="forge-card-label">All Black</span>
+            <span class="forge-card-hint">Monochrome depth</span>
+          </button>
+          <button class="forge-card chromatic-card" data-value="Earth Tones">
+            <div class="chromatic-swatch" style="background: linear-gradient(135deg, #8b6914 0%, #5c4033 50%, #3d2817 100%);"></div>
+            <span class="forge-card-label">Earth Tones</span>
+            <span class="forge-card-hint">Ochre, umber, sienna</span>
+          </button>
+          <button class="forge-card chromatic-card" data-value="Navy">
+            <div class="chromatic-swatch" style="background: linear-gradient(135deg, #1a2744 0%, #0d1b2a 100%);"></div>
+            <span class="forge-card-label">Navy</span>
+            <span class="forge-card-hint">Midnight & marine</span>
+          </button>
+          <button class="forge-card chromatic-card" data-value="Pastel">
+            <div class="chromatic-swatch" style="background: linear-gradient(135deg, #f5e6e8 0%, #e8e6f5 50%, #e6f5f0 100%);"></div>
+            <span class="forge-card-label">Pastel</span>
+            <span class="forge-card-hint">Soft & ethereal</span>
+          </button>
+          <button class="forge-card chromatic-card" data-value="Bold">
+            <div class="chromatic-swatch" style="background: linear-gradient(135deg, #c41e3a 0%, #b07d4b 50%, #1a2744 100%);"></div>
+            <span class="forge-card-label">Bold</span>
+            <span class="forge-card-hint">Scarlet, bronze, indigo</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
-                            ctx.beginPath();
-                            ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-                            ctx.fillStyle = particle.color;
-                            ctx.fill();
-                        });
-                    }
+    <div class="forge-result" id="forge-result">
+      <div class="result-backdrop"></div>
+      <div class="result-content">
+        <div class="result-sheet-handle"></div>
+        <div class="result-header">
+          <p class="eyebrow result-eyebrow">Generated Look</p>
+          <button class="result-close" id="result-close" aria-label="Close result">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="result-lookbook">
+          <div class="lookbook-card" id="lookbook-card">
+            <div class="lookbook-image" id="lookbook-image"></div>
+            <div class="lookbook-overlay">
+              <h3 class="lookbook-title" id="lookbook-title">The Architect</h3>
+              <p class="lookbook-desc" id="lookbook-desc">Structured navy blazer over raw silk trousers. Antique bronze cufflinks. Black leather oxfords.</p>
+            </div>
+          </div>
+        </div>
+        <div class="result-meta">
+          <div class="result-palette" id="result-palette">
+            <div class="palette-swatch" style="background: #1a1a2e;"><span>Navy</span></div>
+            <div class="palette-swatch" style="background: #b07d4b;"><span>Bronze</span></div>
+            <div class="palette-swatch" style="background: #0f0f12;"><span>Obsidian</span></div>
+          </div>
+          <div class="result-tags" id="result-tags">
+            <span class="result-tag">Work</span>
+            <span class="result-tag">Minimalist</span>
+            <span class="result-tag">Cool</span>
+          </div>
+        </div>
+        <div class="result-actions">
+          <button class="btn-gold result-btn-primary" id="result-save">Save to Wardrobe</button>
+          <button class="btn-ghost result-btn-secondary" id="result-again">Forge Again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-                    animate();
-                },
-                initDragAndDrop() {
-                    const outfitContainer = document.getElementById('outfitContainer');
-                    if (outfitContainer) {
-                        new Sortable(outfitContainer, {
-                            animation: 150,
-                            ghostClass: 'sortable-ghost'
-                        });
-                    }
-                },
-                goToProfile() {
-                    // Implement profile navigation
-                    console.log('Navigate to profile');
-                },
-            }
-        });
-    </script>
+<!-- ==================== BOUTIQUE ==================== -->
+<section id="boutique" class="section">
+  <div class="boutique-header">
+    <p class="eyebrow mb-4 reveal">05 — The Boutique</p>
+    <h2 class="display-massive boutique-title reveal reveal-delay-1">Selected <em>Garments</em></h2>
+  </div>
+  <div class="boutique-filters reveal reveal-delay-2">
+    <button class="boutique-filter active">All</button>
+    <button class="boutique-filter">New In</button>
+    <button class="boutique-filter">Trending</button>
+    <button class="boutique-filter">For You</button>
+  </div>
+  <div class="boutique-grid">
+    <div class="boutique-card reveal reveal-delay-1">
+      <div class="boutique-card-img-wrap">
+        <img class="boutique-card-img" src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&q=80" alt="Blazer" loading="lazy">
+      </div>
+      <div class="boutique-card-info">
+        <p class="boutique-card-brand">Atelier Studio</p>
+        <p class="boutique-card-name">Oversized Linen Blazer</p>
+        <p class="boutique-card-price">$289</p>
+      </div>
+      <button class="boutique-card-btn" aria-label="Add to cart">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      </button>
+    </div>
+    <div class="boutique-card reveal reveal-delay-2">
+      <div class="boutique-card-img-wrap">
+        <img class="boutique-card-img" src="https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=400&q=80" alt="Skirt" loading="lazy">
+      </div>
+      <div class="boutique-card-info">
+        <p class="boutique-card-brand">Maison Thread</p>
+        <p class="boutique-card-name">Silk Slip Skirt</p>
+        <p class="boutique-card-price">$145</p>
+      </div>
+      <button class="boutique-card-btn" aria-label="Add to cart">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      </button>
+    </div>
+    <div class="boutique-card reveal reveal-delay-3">
+      <div class="boutique-card-img-wrap">
+        <img class="boutique-card-img" src="https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&q=80" alt="Tote" loading="lazy">
+      </div>
+      <div class="boutique-card-info">
+        <p class="boutique-card-brand">Craft House</p>
+        <p class="boutique-card-name">Minimal Leather Tote</p>
+        <p class="boutique-card-price">$340</p>
+      </div>
+      <button class="boutique-card-btn" aria-label="Add to cart">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      </button>
+    </div>
+    <div class="boutique-card reveal reveal-delay-1">
+      <div class="boutique-card-img-wrap">
+        <img class="boutique-card-img" src="https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&q=80" alt="Trousers" loading="lazy">
+      </div>
+      <div class="boutique-card-info">
+        <p class="boutique-card-brand">Atelier Studio</p>
+        <p class="boutique-card-name">Wide Leg Trousers</p>
+        <p class="boutique-card-price">$195</p>
+      </div>
+      <button class="boutique-card-btn" aria-label="Add to cart">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      </button>
+    </div>
+    <div class="boutique-card reveal reveal-delay-2">
+      <div class="boutique-card-img-wrap">
+        <img class="boutique-card-img" src="https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=400&q=80" alt="Tank" loading="lazy">
+      </div>
+      <div class="boutique-card-info">
+        <p class="boutique-card-brand">Basics Co.</p>
+        <p class="boutique-card-name">Cotton Ribbed Tank</p>
+        <p class="boutique-card-price">$48</p>
+      </div>
+      <button class="boutique-card-btn" aria-label="Add to cart">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      </button>
+    </div>
+    <div class="boutique-card reveal reveal-delay-3">
+      <div class="boutique-card-img-wrap">
+        <img class="boutique-card-img" src="https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=400&q=80" alt="Boots" loading="lazy">
+      </div>
+      <div class="boutique-card-info">
+        <p class="boutique-card-brand">Craft House</p>
+        <p class="boutique-card-name">Suede Chelsea Boots</p>
+        <p class="boutique-card-price">$420</p>
+      </div>
+      <button class="boutique-card-btn" aria-label="Add to cart">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      </button>
+    </div>
+    <div class="boutique-card reveal reveal-delay-1">
+      <div class="boutique-card-img-wrap">
+        <img class="boutique-card-img" src="https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&q=80" alt="Crewneck" loading="lazy">
+      </div>
+      <div class="boutique-card-info">
+        <p class="boutique-card-brand">Warm Studio</p>
+        <p class="boutique-card-name">Merino Crewneck</p>
+        <p class="boutique-card-price">$165</p>
+      </div>
+      <button class="boutique-card-btn" aria-label="Add to cart">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      </button>
+    </div>
+    <div class="boutique-card reveal reveal-delay-2">
+      <div class="boutique-card-img-wrap">
+        <img class="boutique-card-img" src="https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400&q=80" alt="Earrings" loading="lazy">
+      </div>
+      <div class="boutique-card-info">
+        <p class="boutique-card-brand">Gold Theory</p>
+        <p class="boutique-card-name">Statement Earrings</p>
+        <p class="boutique-card-price">$89</p>
+      </div>
+      <button class="boutique-card-btn" aria-label="Add to cart">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== TRENDS ==================== -->
+<section id="trends" class="section">
+  <div class="max-w-6xl mx-auto">
+    <div class="trends-header">
+      <div>
+        <p class="eyebrow mb-4 reveal">06 — The Journal</p>
+        <h2 class="display-massive trends-title reveal reveal-delay-1">What moves<br><em>now.</em></h2>
+      </div>
+      <button class="btn-gold reveal reveal-delay-2" style="font-size:0.6rem; padding:0.8rem 2rem;">ARIA Insight</button>
+    </div>
+    <div id="trends-list">
+      <div class="trend-item reveal">
+        <div class="trend-item-header">
+          <span class="trend-num">01</span>
+          <p class="trend-name">Quiet Luxury</p>
+          <svg class="trend-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="trend-content">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="eyebrow border border-ivory/20 px-3 py-1">SS 2026</span>
+            <span class="trend-heat">94 HEAT</span>
+          </div>
+          <p class="trend-desc">Understated elegance through impeccable materials and invisible branding. The reign continues.</p>
+          <div class="trend-img-preview">
+            <img src="https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&q=80" alt="Quiet Luxury">
+          </div>
+        </div>
+      </div>
+      <div class="trend-item reveal reveal-delay-1">
+        <div class="trend-item-header">
+          <span class="trend-num">02</span>
+          <p class="trend-name">Gorpcore Revival</p>
+          <svg class="trend-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="trend-content">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="eyebrow border border-ivory/20 px-3 py-1">FW 2026</span>
+            <span class="trend-heat">88 HEAT</span>
+          </div>
+          <p class="trend-desc">Technical outdoor aesthetics absorbed into high-fashion territory. Gore-Tex meets tailoring.</p>
+          <div class="trend-img-preview">
+            <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=400&q=80" alt="Gorpcore">
+          </div>
+        </div>
+      </div>
+      <div class="trend-item reveal reveal-delay-2">
+        <div class="trend-item-header">
+          <span class="trend-num">03</span>
+          <p class="trend-name">Digital Atelier</p>
+          <svg class="trend-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="trend-content">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="eyebrow border border-ivory/20 px-3 py-1">SS 2026</span>
+            <span class="trend-heat">85 HEAT</span>
+          </div>
+          <p class="trend-desc">AI-designed textiles and generative pattern work bring algorithmic aesthetics to physical garments.</p>
+          <div class="trend-img-preview">
+            <img src="https://images.unsplash.com/photo-1558171813-4c088753af8f?w=400&q=80" alt="Digital Atelier">
+          </div>
+        </div>
+      </div>
+      <div class="trend-item reveal reveal-delay-3">
+        <div class="trend-item-header">
+          <span class="trend-num">04</span>
+          <p class="trend-name">Neo-Romanticism</p>
+          <svg class="trend-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="trend-content">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="eyebrow border border-ivory/20 px-3 py-1">FW 2026</span>
+            <span class="trend-heat">81 HEAT</span>
+          </div>
+          <p class="trend-desc">Soft florals, layered lace, and Victorian-inspired silhouettes reimagined for the contemporary wearer.</p>
+          <div class="trend-img-preview">
+            <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80" alt="Neo-Romanticism">
+          </div>
+        </div>
+      </div>
+      <div class="trend-item reveal reveal-delay-1">
+        <div class="trend-item-header">
+          <span class="trend-num">05</span>
+          <p class="trend-name">Sport Luxe 2.0</p>
+          <svg class="trend-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+        <div class="trend-content">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="eyebrow border border-ivory/20 px-3 py-1">SS 2026</span>
+            <span class="trend-heat">78 HEAT</span>
+          </div>
+          <p class="trend-desc">Athletic silhouettes fully absorbed into luxury. Track pants in silk, court shoes in leather.</p>
+          <div class="trend-img-preview">
+            <img src="https://images.unsplash.com/photo-1483721310020-03333e577078?w=400&q=80" alt="Sport Luxe">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== MEMBERSHIP ==================== -->
+<section id="membership" class="section">
+  <div class="membership-header">
+    <p class="eyebrow mb-4 reveal">07 — Access</p>
+    <h2 class="display-massive membership-title reveal reveal-delay-1">Three tiers.<br>One <em>atelier.</em></h2>
+    <p class="text-stone max-w-md mx-auto mt-4 font-light reveal reveal-delay-2">Start free. Upgrade when ARIA changes your mornings.</p>
+  </div>
+  <div class="tier-grid">
+    <div class="tier-card reveal reveal-delay-1">
+      <p class="tier-name">Silk</p>
+      <p class="tier-price">Free</p>
+      <p class="tier-period">Begin the weave.</p>
+      <div class="tier-features">
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>20 garments</div>
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>5 daily queries</div>
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Basic forge</div>
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Weather sync</div>
+        <div class="tier-feature"><svg fill="none" viewBox="0 0 24 24" stroke="var(--stone)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>Trend Radar</div>
+        <div class="tier-feature"><svg fill="none" viewBox="0 0 24 24" stroke="var(--stone)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>Analytics</div>
+      </div>
+      <button class="btn-ghost w-full">Begin Free</button>
+    </div>
+    <div class="tier-card featured reveal reveal-delay-2">
+      <div class="tier-badge">Most Selected</div>
+      <p class="tier-name" style="color:var(--gold);">Gold</p>
+      <div class="flex items-end gap-2">
+        <p class="tier-price">$18</p>
+        <p class="tier-period">/mo</p>
+      </div>
+      <p class="tier-period">For the intentional dresser.</p>
+      <div class="tier-features">
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Unlimited garments</div>
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Unlimited ARIA</div>
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Advanced forge</div>
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Full Trend Radar</div>
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Analytics dashboard</div>
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Calendar integration</div>
+      </div>
+      <button class="btn-gold w-full">Join Gold</button>
+    </div>
+    <div class="tier-card reveal reveal-delay-3">
+      <p class="tier-name">Platinum</p>
+      <div class="flex items-end gap-2">
+        <p class="tier-price">$59</p>
+        <p class="tier-period">/mo</p>
+      </div>
+      <p class="tier-period">For houses and professionals.</p>
+      <div class="tier-features">
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Everything in Gold</div>
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Dedicated sessions</div>
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Monthly style report</div>
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Priority AI responses</div>
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Early feature access</div>
+        <div class="tier-feature yes"><svg fill="none" viewBox="0 0 24 24" stroke="var(--gold)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Multi-wardrobe</div>
+      </div>
+      <button class="btn-ghost w-full">Contact</button>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FOOTER ==================== -->
+<footer id="footer">
+  <div class="footer-brand">Maison Aria</div>
+  <p class="footer-tagline">The Digital Atelier. Styled by intelligence, curated by you.</p>
+  <div>
+    <p class="footer-heading">Atelier</p>
+    <ul class="space-y-2">
+      <li><a href="#philosophy">Philosophy</a></li>
+      <li><a href="#loom">The Loom</a></li>
+      <li><a href="#stylist">ARIA</a></li>
+      <li><a href="#forge">Forge</a></li>
+    </ul>
+  </div>
+  <div>
+    <p class="footer-heading">Collection</p>
+    <ul class="space-y-2">
+      <li><a href="#boutique">Boutique</a></li>
+      <li><a href="#trends">Journal</a></li>
+    </ul>
+  </div>
+</footer>
+
+<!-- ==================== SCRIPTS ==================== -->
+<script>
+// ==================== CUSTOM CURSOR ====================
+const cursorDot = document.getElementById('cursor-dot');
+const cursorRing = document.getElementById('cursor-ring');
+let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+if (window.innerWidth > 768) {
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    cursorDot.style.left = mouseX + 'px';
+    cursorDot.style.top = mouseY + 'px';
+  });
+
+  function animateCursor() {
+    ringX += (mouseX - ringX) * 0.15;
+    ringY += (mouseY - ringY) * 0.15;
+    cursorRing.style.left = ringX + 'px';
+    cursorRing.style.top = ringY + 'px';
+    requestAnimationFrame(animateCursor);
+  }
+  animateCursor();
+
+  const hoverTargets = document.querySelectorAll('a, button, .boutique-card, .loom-item, .trend-item, .quick-prompt, .boutique-filter, .forge-card, .orbit-node, .palette-swatch, .trend-item-header');
+  hoverTargets.forEach(el => {
+    el.addEventListener('mouseenter', () => cursorRing.classList.add('hover'));
+    el.addEventListener('mouseleave', () => cursorRing.classList.remove('hover'));
+  });
+
+  document.addEventListener('mousedown', () => cursorRing.classList.add('click'));
+  document.addEventListener('mouseup', () => cursorRing.classList.remove('click'));
+}
+
+// ==================== SCROLL PROGRESS ====================
+const scrollProgress = document.getElementById('scroll-progress');
+window.addEventListener('scroll', () => {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = (scrollTop / docHeight) * 100;
+  scrollProgress.style.width = progress + '%';
+});
+
+// ==================== PRELOADER ====================
+const preloaderCounter = document.getElementById('preloader-counter');
+const preloaderBarFill = document.getElementById('preloader-bar-fill');
+const preloaderText = document.getElementById('preloader-text');
+const preloader = document.getElementById('preloader');
+let loadProgress = 0;
+const loadMessages = ['Weaving the atelier', 'Calibrating chromatic matrix', 'Syncing weather layers', 'Loading style intelligence', 'Finalizing threads'];
+
+function updatePreloader() {
+  loadProgress += Math.random() * 15;
+  if (loadProgress > 100) loadProgress = 100;
+  preloaderCounter.textContent = String(Math.floor(loadProgress)).padStart(2, '0');
+  preloaderBarFill.style.width = loadProgress + '%';
+  const msgIndex = Math.min(Math.floor((loadProgress / 100) * loadMessages.length), loadMessages.length - 1);
+  preloaderText.textContent = loadMessages[msgIndex];
+  if (loadProgress < 100) {
+    setTimeout(updatePreloader, 200 + Math.random() * 300);
+  } else {
+    setTimeout(() => preloader.classList.add('done'), 600);
+  }
+}
+window.addEventListener('load', () => setTimeout(updatePreloader, 300));
+
+// ==================== AMBIENT PARTICLES ====================
+const particlesContainer = document.getElementById('ambient-particles');
+for (let i = 0; i < 20; i++) {
+  const p = document.createElement('div');
+  p.className = 'ambient-particle';
+  p.style.left = Math.random() * 100 + '%';
+  p.style.top = Math.random() * 100 + '%';
+  p.style.animationDelay = Math.random() * 20 + 's';
+  p.style.animationDuration = (15 + Math.random() * 15) + 's';
+  p.style.width = (1 + Math.random() * 2) + 'px';
+  p.style.height = p.style.width;
+  particlesContainer.appendChild(p);
+}
+
+// ==================== BOTTOM NAVBAR ACTIVE STATE + HIDE/SHOW ====================
+const bottomNav = document.getElementById('bottom-nav');
+const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+let lastScrollY = 0;
+let scrollDirection = 'up';
+
+function updateBottomNav() {
+  const currentScrollY = window.scrollY;
+  scrollDirection = currentScrollY > lastScrollY ? 'down' : 'up';
+  lastScrollY = currentScrollY;
+
+  // Hide on scroll down, show on scroll up
+  if (scrollDirection === 'down' && currentScrollY > 200) {
+    bottomNav.classList.add('hidden');
+  } else {
+    bottomNav.classList.remove('hidden');
+  }
+
+  // Update active state based on visible section
+  const sections = ['philosophy', 'boutique', 'stylist', 'forge', 'membership'];
+  let currentSection = 'philosophy';
+
+  sections.forEach(id => {
+    const section = document.getElementById(id);
+    if (section) {
+      const rect = section.getBoundingClientRect();
+      if (rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2) {
+        currentSection = id;
+      }
+    }
+  });
+
+  bottomNavItems.forEach(item => {
+    item.classList.remove('active');
+    if (item.dataset.section === currentSection) {
+      item.classList.add('active');
+    }
+  });
+}
+
+window.addEventListener('scroll', updateBottomNav, { passive: true });
+
+// ==================== LENIS SMOOTH SCROLL ====================
+const lenis = new Lenis({ 
+  duration: 1.2, 
+  easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10*t)),
+  smoothWheel: true
+});
+function raf(time) { 
+  lenis.raf(time); 
+  requestAnimationFrame(raf); 
+}
+requestAnimationFrame(raf);
+
+// ==================== GSAP SCROLLTRIGGER ====================
+gsap.registerPlugin(ScrollTrigger);
+
+gsap.to('.hero-eyebrow', { opacity: 1, y: 0, duration: 1, delay: 2.2, ease: 'power3.out' });
+gsap.from('#hero-line1', { y: '100%', duration: 1.4, delay: 2.5, ease: 'power3.out' });
+gsap.from('#hero-line2', { y: '100%', duration: 1.4, delay: 2.7, ease: 'power3.out' });
+gsap.to('.hero-sub', { opacity: 1, y: 0, duration: 1, delay: 3.2, ease: 'power3.out' });
+gsap.to('.hero-cta', { opacity: 1, y: 0, duration: 1, delay: 3.5, ease: 'power3.out' });
+
+const topNav = document.getElementById('top-nav');
+ScrollTrigger.create({
+  start: 'top -100',
+  onUpdate: (self) => {
+    if (self.direction === 1 && self.scroll() > 100) {
+      topNav.classList.add('scrolled');
+    } else if (self.scroll() < 100) {
+      topNav.classList.remove('scrolled');
+    }
+  }
+});
+
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('active');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+const statObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el = entry.target;
+      const target = parseInt(el.dataset.count);
+      const duration = 2000;
+      const start = performance.now();
+      function updateCounter(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(eased * target);
+        if (target >= 1000000) {
+          el.textContent = (current / 1000000).toFixed(1) + 'M';
+        } else {
+          el.textContent = current + (target === 94 ? '%' : target === 12 ? ' min' : '');
+        }
+        if (progress < 1) requestAnimationFrame(updateCounter);
+      }
+      requestAnimationFrame(updateCounter);
+      statObserver.unobserve(el);
+    }
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('.philosophy-stat-value').forEach(el => statObserver.observe(el));
+
+ScrollTrigger.create({
+  trigger: '#philosophy',
+  start: 'top bottom',
+  end: 'bottom top',
+  scrub: true,
+  onUpdate: (self) => {
+    const media = document.querySelector('.philosophy-cinematic video');
+    if (media) media.style.transform = `translateY(${self.progress * 30}px) scale(1.05)`;
+  }
+});
+
+// ==================== LOOM CAROUSEL DOTS ====================
+const loomCarousel = document.getElementById('loom-carousel');
+const loomDots = document.querySelectorAll('.loom-dot');
+if (loomCarousel) {
+  loomCarousel.addEventListener('scroll', () => {
+    const scrollLeft = loomCarousel.scrollLeft;
+    const itemWidth = loomCarousel.querySelector('.loom-item').offsetWidth + 16; // gap
+    const activeIndex = Math.round(scrollLeft / itemWidth);
+    loomDots.forEach((dot, i) => {
+      dot.classList.toggle('active', i === activeIndex);
+    });
+  }, { passive: true });
+}
+
+// ==================== MAGNETIC BUTTONS ====================
+if (window.innerWidth > 768) {
+  document.querySelectorAll('.magnetic-wrap').forEach(wrap => {
+    const btn = wrap.querySelector('.btn-gold, .btn-ghost');
+    if (!btn) return;
+    wrap.addEventListener('mousemove', (e) => {
+      const rect = wrap.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
+      btn.style.transform = `translate(${x * 0.3}px, ${y * 0.3}px)`;
+    });
+    wrap.addEventListener('mouseleave', () => {
+      btn.style.transform = 'translate(0, 0)';
+    });
+  });
+}
+
+// ==================== 3D TILT CARDS ====================
+if (window.innerWidth > 768) {
+  document.querySelectorAll('.boutique-card, .loom-item, .tier-card').forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      card.style.transform = `perspective(1000px) rotateX(${-y * 10}deg) rotateY(${x * 10}deg) translateY(-8px)`;
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = '';
+    });
+  });
+}
+
+// ==================== TERMINAL CHAT ====================
+const terminalInput = document.getElementById('terminal-input');
+const terminalChat = document.getElementById('terminal-chat');
+const responses = [
+  "Consider a structured navy blazer with raw silk trousers. The contrast between tailored rigidity and fluid drape creates visual tension. Add a single antique bronze accent.",
+  "For this occasion, I recommend a charcoal merino turtleneck under an unstructured camel coat. Dark denim with clean lines. Chelsea boots in espresso suede.",
+  "A silk charmeuse blouse in ivory, paired with high-waisted wide-leg trousers. The proportions elongate the silhouette. Add sculptural bronze earrings.",
+  "Think monochromatic depth: all-black with varying textures. Matte cotton, patent leather, and sheer silk layers create dimension without colour.",
+  "A deconstructed linen suit in sand tones. Bare ankles, leather sandals. The casual elegance signals confidence without effort."
+];
+
+terminalInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && terminalInput.value.trim()) {
+    const val = terminalInput.value;
+    terminalInput.value = '';
+    const userLine = document.createElement('div');
+    userLine.className = 'terminal-msg-user';
+    userLine.innerHTML = `<span style="color:var(--stone);">> ${val}</span>`;
+    terminalChat.appendChild(userLine);
+
+    const respLine = document.createElement('div');
+    respLine.className = 'terminal-msg';
+    respLine.innerHTML = `<span style="color:var(--gold);">ARIA:</span> <span class="typing-text"></span>`;
+    terminalChat.appendChild(respLine);
+    terminalChat.scrollTop = terminalChat.scrollHeight;
+
+    const textSpan = respLine.querySelector('.typing-text');
+    const response = responses[Math.floor(Math.random() * responses.length)];
+    let charIndex = 0;
+
+    function typeChar() {
+      if (charIndex < response.length) {
+        textSpan.textContent += response[charIndex];
+        charIndex++;
+        terminalChat.scrollTop = terminalChat.scrollHeight;
+        setTimeout(typeChar, 20 + Math.random() * 30);
+      }
+    }
+    setTimeout(typeChar, 500);
+  }
+});
+
+document.querySelectorAll('.quick-prompt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const prompts = {
+      'Agency interview': 'I have a creative agency interview tomorrow.',
+      'Date night': 'Dinner date tonight at a fine dining restaurant.',
+      'Gallery opening': 'Gallery opening this evening. Need something artistic.',
+      'Summer streets': 'Hot summer day in the city. Comfortable but elevated.'
+    };
+    terminalInput.value = prompts[btn.textContent.trim()] || btn.textContent;
+    terminalInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+  });
+});
+
+// ==================== BOUTIQUE FILTERS ====================
+document.querySelectorAll('.boutique-filter').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.boutique-filter').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const cards = document.querySelectorAll('.boutique-card');
+    cards.forEach((card, i) => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+      setTimeout(() => {
+        card.style.transition = 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+        card.style.opacity = '1';
+        card.style.transform = '';
+      }, i * 50);
+    });
+  });
+});
+
+// ==================== TRENDS ACCORDION ====================
+document.querySelectorAll('.trend-item-header').forEach(header => {
+  header.addEventListener('click', () => {
+    const item = header.closest('.trend-item');
+    const wasExpanded = item.classList.contains('expanded');
+
+    // Close all others on mobile
+    if (window.innerWidth < 768) {
+      document.querySelectorAll('.trend-item').forEach(i => i.classList.remove('expanded'));
+    }
+
+    if (!wasExpanded) {
+      item.classList.add('expanded');
+    }
+  });
+});
+
+// ==================== TEXT SCRAMBLE ====================
+class TextScramble {
+  constructor(el) {
+    this.el = el;
+    this.chars = '!<>-_\/[]{}=+*^?#________';
+    this.original = el.textContent;
+  }
+  scramble() {
+    let iteration = 0;
+    const interval = setInterval(() => {
+      this.el.textContent = this.original
+        .split('')
+        .map((char, index) => {
+          if (index < iteration) return this.original[index];
+          return this.chars[Math.floor(Math.random() * this.chars.length)];
+        })
+        .join('');
+      if (iteration >= this.original.length) clearInterval(interval);
+      iteration += 1/3;
+    }, 30);
+  }
+}
+
+document.querySelectorAll('.nav-brand, .boutique-card-name, .trend-name').forEach(el => {
+  const scrambler = new TextScramble(el);
+  el.addEventListener('mouseenter', () => scrambler.scramble());
+});
+
+// ==================== FORGE LOGIC ====================
+(function() {
+  const forgeData = { gender: '', occasion: '', vibe: '', weather: '', color: '' };
+  let currentStep = 1;
+  const totalSteps = 5;
+
+  const forgeResults = {
+    male: [
+      { 
+        name: 'The Architect', 
+        desc: 'Structured navy blazer over raw silk trousers. Antique bronze cufflinks. Black leather oxfords. A silhouette that commands authority without shouting.',
+        colors: ['#1a1a2e', '#b07d4b', '#0f0f12'],
+        colorNames: ['Navy', 'Bronze', 'Obsidian'],
+        image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&q=80'
+      },
+      { 
+        name: 'The Executive', 
+        desc: 'Charcoal merino turtleneck under an unstructured camel coat. Dark denim with clean lines. Chelsea boots in espresso suede.',
+        colors: ['#4a4a4a', '#c2a878', '#3d2817'],
+        colorNames: ['Charcoal', 'Camel', 'Espresso'],
+        image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&q=80'
+      },
+      { 
+        name: 'The Nightwalker', 
+        desc: 'Oversized black leather jacket. Distressed selvedge denim. Combat boots. Silver chain accents. Urban armor for the fearless.',
+        colors: ['#0f0f12', '#4a4a4a', '#c0c0c0'],
+        colorNames: ['Black', 'Charcoal', 'Silver'],
+        image: 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=800&q=80'
+      },
+      { 
+        name: 'The Minimalist', 
+        desc: 'Clean white poplin shirt. Tailored beige trousers. Minimal white sneakers. No accessories. Pure form, absolute restraint.',
+        colors: ['#ffffff', '#d4c4a8', '#f0f0f0'],
+        colorNames: ['White', 'Beige', 'Pearl'],
+        image: 'https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=800&q=80'
+      },
+      { 
+        name: 'The Bohemian', 
+        desc: 'Printed camp collar shirt in earth tones. Woven leather belt. Chinos rolled at the ankle. Suede loafers. Free spirit, curated execution.',
+        colors: ['#8b6914', '#b07d4b', '#6b4423'],
+        colorNames: ['Ochre', 'Bronze', 'Umber'],
+        image: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=800&q=80'
+      },
+      { 
+        name: 'The Gallery', 
+        desc: 'Deconstructed linen suit in sand tones. Bare ankles. Leather sandals. The casual elegance signals confidence without effort.',
+        colors: ['#c2b280', '#f5f0e8', '#8b7355'],
+        colorNames: ['Sand', 'Ivory', 'Bronze'],
+        image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80'
+      }
+    ],
+    female: [
+      { 
+        name: 'The Matriarch', 
+        desc: 'Structured navy blazer over raw silk trousers. Antique bronze cufflinks. Black leather oxfords. A silhouette that commands authority without shouting.',
+        colors: ['#1a1a2e', '#b07d4b', '#0f0f12'],
+        colorNames: ['Navy', 'Bronze', 'Obsidian'],
+        image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&q=80'
+      },
+      { 
+        name: 'The Romantic', 
+        desc: 'Flowing ivory silk dress with delicate lace detailing. Soft bronze accessories. Strappy nude heels. Ethereal grace for intimate evenings.',
+        colors: ['#f5f0e8', '#b07d4b', '#d4a5a5'],
+        colorNames: ['Ivory', 'Bronze', 'Blush'],
+        image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80'
+      },
+      { 
+        name: 'The Edge', 
+        desc: 'Oversized black leather jacket. Distressed selvedge denim. Combat boots. Silver chain accents. Urban armor for the fearless.',
+        colors: ['#0f0f12', '#4a4a4a', '#c0c0c0'],
+        colorNames: ['Black', 'Charcoal', 'Silver'],
+        image: 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=800&q=80'
+      },
+      { 
+        name: 'The Minimalist', 
+        desc: 'Clean white poplin shirt. Tailored beige trousers. Minimal white sneakers. No accessories. Pure form, absolute restraint.',
+        colors: ['#ffffff', '#d4c4a8', '#f0f0f0'],
+        colorNames: ['White', 'Beige', 'Pearl'],
+        image: 'https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=800&q=80'
+      },
+      { 
+        name: 'The Bohemian', 
+        desc: 'Printed maxi dress in earth tones. Woven leather belt. Ankle boots. Layered bronze jewelry. Free spirit, curated execution.',
+        colors: ['#8b6914', '#b07d4b', '#6b4423'],
+        colorNames: ['Ochre', 'Bronze', 'Umber'],
+        image: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=800&q=80'
+      },
+      { 
+        name: 'The Gallery', 
+        desc: 'Deconstructed linen suit in sand tones. Bare ankles. Leather sandals. The casual elegance signals confidence without effort.',
+        colors: ['#c2b280', '#f5f0e8', '#8b7355'],
+        colorNames: ['Sand', 'Ivory', 'Bronze'],
+        image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80'
+      }
+    ],
+    'non-binary': [
+      { 
+        name: 'The Architect', 
+        desc: 'Structured navy blazer over raw silk trousers. Antique bronze cufflinks. Black leather oxfords. A silhouette that commands authority without shouting.',
+        colors: ['#1a1a2e', '#b07d4b', '#0f0f12'],
+        colorNames: ['Navy', 'Bronze', 'Obsidian'],
+        image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&q=80'
+      },
+      { 
+        name: 'The Romantic', 
+        desc: 'Flowing ivory silk dress with delicate lace detailing. Soft bronze accessories. Strappy nude heels. Ethereal grace for intimate evenings.',
+        colors: ['#f5f0e8', '#b07d4b', '#d4a5a5'],
+        colorNames: ['Ivory', 'Bronze', 'Blush'],
+        image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80'
+      },
+      { 
+        name: 'The Edge', 
+        desc: 'Oversized black leather jacket. Distressed selvedge denim. Combat boots. Silver chain accents. Urban armor for the fearless.',
+        colors: ['#0f0f12', '#4a4a4a', '#c0c0c0'],
+        colorNames: ['Black', 'Charcoal', 'Silver'],
+        image: 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=800&q=80'
+      },
+      { 
+        name: 'The Minimalist', 
+        desc: 'Clean white poplin shirt. Tailored beige trousers. Minimal white sneakers. No accessories. Pure form, absolute restraint.',
+        colors: ['#ffffff', '#d4c4a8', '#f0f0f0'],
+        colorNames: ['White', 'Beige', 'Pearl'],
+        image: 'https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=800&q=80'
+      },
+      { 
+        name: 'The Bohemian', 
+        desc: 'Printed maxi dress in earth tones. Woven leather belt. Ankle boots. Layered bronze jewelry. Free spirit, curated execution.',
+        colors: ['#8b6914', '#b07d4b', '#6b4423'],
+        colorNames: ['Ochre', 'Bronze', 'Umber'],
+        image: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=800&q=80'
+      },
+      { 
+        name: 'The Gallery', 
+        desc: 'Deconstructed linen suit in sand tones. Bare ankles. Leather sandals. The casual elegance signals confidence without effort.',
+        colors: ['#c2b280', '#f5f0e8', '#8b7355'],
+        colorNames: ['Sand', 'Ivory', 'Bronze'],
+        image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80'
+      }
+    ]
+  };
+
+  const particleField = document.getElementById('forge-particles');
+  if (particleField) {
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement('div');
+      p.className = 'forge-particle';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.top = Math.random() * 100 + '%';
+      p.style.setProperty('--tx', (Math.random() - 0.5) * 100 + 'px');
+      p.style.setProperty('--ty', (Math.random() - 0.5) * 100 + 'px');
+      p.style.animationDelay = Math.random() * 15 + 's';
+      p.style.animationDuration = (10 + Math.random() * 15) + 's';
+      particleField.appendChild(p);
+    }
+  }
+
+  function updateOrbit() {
+    const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+    document.getElementById('orbit-progress').style.width = progress + '%';
+    document.querySelectorAll('.orbit-node').forEach(node => {
+      const step = parseInt(node.dataset.step);
+      node.classList.remove('active', 'completed');
+      if (step === currentStep) {
+        node.classList.add('active');
+      } else if (step < currentStep) {
+        node.classList.add('completed');
+      }
+    });
+  }
+
+  function showPanel(step) {
+    document.querySelectorAll('.forge-panel').forEach(panel => {
+      const panelStep = parseInt(panel.dataset.step);
+      if (panelStep === currentStep && panelStep !== step) {
+        panel.classList.add('exit-left');
+        setTimeout(() => {
+          panel.classList.remove('active', 'exit-left');
+        }, 600);
+      }
+    });
+    setTimeout(() => {
+      const target = document.querySelector(`.forge-panel[data-step="${step}"]`);
+      if (target) target.classList.add('active');
+    }, 300);
+    currentStep = step;
+    updateOrbit();
+  }
+
+  document.querySelectorAll('.orbit-node').forEach(node => {
+    node.addEventListener('click', () => {
+      const step = parseInt(node.dataset.step);
+      if (step <= currentStep || (step === currentStep + 1 && forgeData[getStepKey(currentStep)])) {
+        showPanel(step);
+      }
+    });
+  });
+
+  function getStepKey(step) {
+    const keys = ['gender', 'occasion', 'vibe', 'weather', 'color'];
+    return keys[step - 1];
+  }
+
+  document.querySelectorAll('.forge-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const panel = card.closest('.forge-panel');
+      const step = parseInt(panel.dataset.step);
+      const key = getStepKey(step);
+      const value = card.dataset.value;
+      panel.querySelectorAll('.forge-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      forgeData[key] = value;
+      setTimeout(() => {
+        if (step < totalSteps) {
+          showPanel(step + 1);
+        } else {
+          generateResult();
+        }
+      }, 400);
+    });
+  });
+
+  function generateResult() {
+    const genderKey = forgeData.gender.toLowerCase() === 'non-binary' ? 'non-binary' : forgeData.gender.toLowerCase();
+    const results = forgeResults[genderKey] || forgeResults['non-binary'];
+    const result = results[Math.floor(Math.random() * results.length)];
+    const resultEl = document.getElementById('forge-result');
+    document.getElementById('lookbook-title').textContent = result.name;
+    document.getElementById('lookbook-desc').textContent = result.desc;
+    document.getElementById('lookbook-image').style.backgroundImage = `url(${result.image})`;
+    const paletteEl = document.getElementById('result-palette');
+    paletteEl.innerHTML = result.colors.map((c, i) => 
+      `<div class="palette-swatch" style="background: ${c};"><span>${result.colorNames[i]}</span></div>`
+    ).join('');
+    const tagsEl = document.getElementById('result-tags');
+    tagsEl.innerHTML = Object.values(forgeData).filter(v => v).map(v => 
+      `<span class="result-tag">${v}</span>`
+    ).join('');
+    resultEl.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+  }
+
+  document.getElementById('result-close').addEventListener('click', closeResult);
+  document.getElementById('result-again').addEventListener('click', closeResult);
+
+  document.getElementById('forge-result').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('forge-result') || e.target.classList.contains('result-backdrop')) {
+      closeResult();
+    }
+  });
+
+  function closeResult() {
+    const resultEl = document.getElementById('forge-result');
+    resultEl.classList.remove('visible');
+    document.body.style.overflow = '';
+    Object.keys(forgeData).forEach(k => forgeData[k] = '');
+    currentStep = 1;
+    document.querySelectorAll('.forge-card').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.forge-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('.forge-panel[data-step="1"]').classList.add('active');
+    updateOrbit();
+  }
+
+  document.getElementById('result-save').addEventListener('click', function() {
+    const original = this.textContent;
+    this.textContent = 'Saved';
+    this.style.background = 'var(--gold)';
+    this.style.color = 'var(--obsidian)';
+    setTimeout(() => {
+      this.textContent = original;
+      this.style.background = '';
+      this.style.color = '';
+    }, 2000);
+  });
+
+  if (window.innerWidth > 768) {
+    document.querySelectorAll('.forge-card').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        card.style.transform = `perspective(1000px) rotateX(${-y * 8}deg) rotateY(${x * 8}deg) translateY(-8px) scale(1.02)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        if (!card.classList.contains('selected')) {
+          card.style.transform = '';
+        }
+      });
+    });
+  }
+
+  updateOrbit();
+})();
+</script>
+
+<!-- THREE.JS HERO SHADER -->
+<script type="module">
+import * as THREE from 'three';
+
+const canvas = document.getElementById('hero-canvas');
+if (canvas) {
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.z = 2.5;
+
+  const vertexShader = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+
+  const fragmentShader = `
+precision highp float;
+uniform float uTime;
+uniform vec2 uMouse;
+uniform vec2 uResolution;
+varying vec2 vUv;
+
+vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+float snoise(vec2 v) {
+  const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+  vec2 i = floor(v + dot(v, C.yy));
+  vec2 x0 = v - i + dot(i, C.xx);
+  vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+  vec4 x12 = x0.xyxy + C.xxzz;
+  x12.xy -= i1;
+  i = mod289(i);
+  vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+  vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+  m = m*m; m = m*m;
+  vec3 x = 2.0 * fract(p * C.www) - 1.0;
+  vec3 h = abs(x) - 0.5;
+  vec3 ox = floor(x + 0.5);
+  vec3 a0 = x - ox;
+  m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
+  vec3 g;
+  g.x = a0.x * x0.x + h.x * x0.y;
+  g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+  return 130.0 * dot(m, g);
+}
+
+float fbm(vec2 p) {
+  float v = 0.0; float a = 0.5;
+  mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
+  for (int i = 0; i < 5; i++) {
+    v += a * snoise(p);
+    p = rot * p * 2.0 + vec2(100.0);
+    a *= 0.5;
+  }
+  return v;
+}
+
+void main() {
+  vec2 uv = vUv;
+  float t = uTime * 0.2;
+  vec2 mouse = uMouse;
+  float dist = distance(uv, mouse);
+  float ripple = sin(dist * 25.0 - uTime * 3.0) * 0.025 * smoothstep(0.4, 0.0, dist);
+  uv += ripple;
+  float n1 = fbm(uv * 2.0 + vec2(t, t * 0.7));
+  float n2 = fbm(uv * 4.0 - vec2(t * 0.5, t));
+  float n3 = snoise(uv * 8.0 + t * 0.3);
+  float pattern = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;
+  vec3 ink = vec3(0.06, 0.06, 0.07);
+  vec3 copper = vec3(0.55, 0.35, 0.22);
+  vec3 gold = vec3(0.69, 0.49, 0.29);
+  vec3 parchment = vec3(0.95, 0.93, 0.90);
+  vec3 burgundy = vec3(0.35, 0.16, 0.16);
+  vec3 color = mix(ink, burgundy, pattern * 0.5 + 0.5);
+  color = mix(color, copper, n2 * 0.4 + 0.3);
+  color = mix(color, gold, n3 * 0.2 + 0.1);
+  float sheen = pow(max(0.0, sin(uv.x * 30.0 + t * 2.0) * sin(uv.y * 20.0 - t * 1.5)), 3.0);
+  color += sheen * 0.15;
+  float vig = 1.0 - smoothstep(0.2, 1.0, length(vUv - 0.5) * 1.2);
+  color *= vig;
+  gl_FragColor = vec4(color, 1.0);
+}
+  `;
+
+  const material = new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    uniforms: {
+      uTime: { value: 0 },
+      uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+      uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+    }
+  });
+
+  const geometry = new THREE.PlaneGeometry(5, 5, 1, 1);
+  const mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
+
+  let mouseX = 0.5, mouseY = 0.5;
+  document.addEventListener('mousemove', e => {
+    mouseX = e.clientX / window.innerWidth;
+    mouseY = 1.0 - e.clientY / window.innerHeight;
+  });
+
+  // Touch support for mobile
+  document.addEventListener('touchmove', e => {
+    if (e.touches.length > 0) {
+      mouseX = e.touches[0].clientX / window.innerWidth;
+      mouseY = 1.0 - e.touches[0].clientY / window.innerHeight;
+    }
+  }, { passive: true });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    material.uniforms.uTime.value += 0.016;
+    material.uniforms.uMouse.value.x += (mouseX - material.uniforms.uMouse.value.x) * 0.05;
+    material.uniforms.uMouse.value.y += (mouseY - material.uniforms.uMouse.value.y) * 0.05;
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    material.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+  });
+}
+</script>
+
+<!-- THREE.JS LOOM THREADS -->
+<script type="module">
+import * as THREE from 'three';
+
+const loomCanvas = document.getElementById('loom-canvas');
+if (loomCanvas) {
+  const renderer = new THREE.WebGLRenderer({ canvas: loomCanvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.z = 8;
+
+  const count = 60;
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(count * 3);
+  const origins = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    pos[i*3] = (Math.random() - 0.5) * 12;
+    pos[i*3+1] = (Math.random() - 0.5) * 8;
+    pos[i*3+2] = (Math.random() - 0.5) * 4;
+    origins[i*3] = pos[i*3];
+    origins[i*3+1] = pos[i*3+1];
+    origins[i*3+2] = pos[i*3+2];
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({ color: 0xb07d4b, size: 0.04, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending });
+  const points = new THREE.Points(geo, mat);
+  scene.add(points);
+
+  const lineGeo = new THREE.BufferGeometry();
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xb07d4b, transparent: true, opacity: 0.08 });
+  const lines = new THREE.LineSegments(lineGeo, lineMat);
+  scene.add(lines);
+
+  const clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    const time = clock.getElapsedTime();
+    const positions = points.geometry.attributes.position.array;
+    for (let i = 0; i < count; i++) {
+      positions[i*3] = origins[i*3] + Math.sin(time * 0.5 + origins[i*3+1]) * 0.3;
+      positions[i*3+1] = origins[i*3+1] + Math.cos(time * 0.3 + origins[i*3]) * 0.2;
+      positions[i*3+2] = origins[i*3+2] + Math.sin(time * 0.4 + i) * 0.1;
+    }
+    points.geometry.attributes.position.needsUpdate = true;
+
+    const linePositions = [];
+    for (let i = 0; i < count; i++) {
+      for (let j = i+1; j < count; j++) {
+        const dx = positions[i*3] - positions[j*3];
+        const dy = positions[i*3+1] - positions[j*3+1];
+        const dz = positions[i*3+2] - positions[j*3+2];
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        if (dist < 2.5) {
+          linePositions.push(positions[i*3], positions[i*3+1], positions[i*3+2]);
+          linePositions.push(positions[j*3], positions[j*3+1], positions[j*3+2]);
+        }
+      }
+    }
+    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  });
+}
+</script>
 </body>
 </html>
